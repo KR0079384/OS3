@@ -19,7 +19,7 @@ app = FastAPI(
 # -----------------------------
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # allow all origins during development
+    allow_origins=["*"],  # Allow all origins during development
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -39,4 +39,8 @@ def root():
 # -----------------------------
 # Register API Routes
 # -----------------------------
-app.include_router(scan_router, prefix="/api", tags=["Security Scanner"])
+app.include_router(
+    scan_router,
+    prefix="/api",
+    tags=["Security Scanner"]
+)

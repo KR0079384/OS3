@@ -8,7 +8,7 @@ import { useNavigate } from "react-router-dom";
 import cyberBgVideo from "@/assets/cyber-bg-video.mp4";
 import PageTransition from "@/components/PageTransition";
 
-import { scanPackage } from "@/services/api";
+import { scanPackage, ScanResponse } from "@/services/api";
 
 const Scan = () => {
 
@@ -18,12 +18,15 @@ const Scan = () => {
   const [scanPhase, setScanPhase] = useState("");
   const [complete, setComplete] = useState(false);
 
-  const [dependencies, setDependencies] = useState(0);
-  const [vulnerabilities, setVulnerabilities] = useState(0);
-  const [securityScore, setSecurityScore] = useState(0);
-  const [status, setStatus] = useState("");
+  const [dependencies, setDependencies] = useState<number>(0);
+  const [vulnerabilities, setVulnerabilities] = useState<number>(0);
+  const [securityScore, setSecurityScore] = useState<number>(0);
+  const [status, setStatus] = useState<string>("Unknown");
 
-  const [graph, setGraph] = useState<any>(null);
+  const [graph, setGraph] = useState<any>({
+    nodes: [],
+    edges: []
+  });
 
   const navigate = useNavigate();
 
@@ -46,7 +49,7 @@ const Scan = () => {
 
     try {
 
-      const data = await scanPackage(packageName);
+      const data: ScanResponse = await scanPackage(packageName);
 
       console.log("Scan result:", data);
 
@@ -55,11 +58,18 @@ const Scan = () => {
       setSecurityScore(data.security_score || 0);
       setStatus(data.status || "Unknown");
 
-      setGraph(data.graph);
+      setGraph(data.graph || { nodes: [], edges: [] });
 
     } catch (error) {
 
       console.error("Scan Error:", error);
+
+      setDependencies(0);
+      setVulnerabilities(0);
+      setSecurityScore(0);
+      setStatus("Error");
+
+      setGraph({ nodes: [], edges: [] });
 
     }
 
@@ -108,20 +118,34 @@ const Scan = () => {
 
       <div className="min-h-screen pt-24 pb-12 relative overflow-hidden">
 
-        <video autoPlay loop muted playsInline className="absolute inset-0 w-full h-full object-cover z-0" src={cyberBgVideo} />
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover z-0"
+          src={cyberBgVideo}
+        />
 
         <div className="absolute inset-0 bg-background/80 z-[1]" />
         <div className="absolute inset-0 cyber-grid z-[2]" />
 
         <div className="container max-w-3xl relative z-[3]">
 
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+
+            {/* Header */}
 
             <div className="text-center mb-10">
 
               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-primary/30 bg-primary/5 mb-4">
                 <Zap className="w-3 h-3 text-primary" />
-                <span className="text-xs font-medium text-primary">Quick Analysis</span>
+                <span className="text-xs font-medium text-primary">
+                  Quick Analysis
+                </span>
               </div>
 
               <h1 className="text-3xl md:text-4xl font-bold mb-3 text-foreground">
@@ -129,10 +153,12 @@ const Scan = () => {
               </h1>
 
               <p className="text-foreground/70 text-base">
-                Search a package to begin analysis.
+                Search an open-source package to begin security analysis.
               </p>
 
             </div>
+
+            {/* Scan Card */}
 
             <Card className="mb-6 bg-card/40 backdrop-blur-sm border-border/50">
 
@@ -153,7 +179,10 @@ const Scan = () => {
                     onChange={(e) => setPackageName(e.target.value)}
                   />
 
-                  <Button onClick={startScan} disabled={scanning}>
+                  <Button
+                    onClick={startScan}
+                    disabled={scanning}
+                  >
 
                     {scanning ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -171,11 +200,16 @@ const Scan = () => {
 
             </Card>
 
+            {/* Scan Complete */}
+
             <AnimatePresence>
 
               {complete && (
 
-                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                >
 
                   <Card className="bg-card/40 backdrop-blur-sm border-green-500/40">
 
@@ -188,10 +222,14 @@ const Scan = () => {
                       </h3>
 
                       <p className="text-sm text-foreground/70 mb-4">
-                        Found <b>{dependencies}</b> dependencies • <b>{vulnerabilities}</b> vulnerabilities detected
+                        Found <b>{dependencies}</b> dependencies •{" "}
+                        <b>{vulnerabilities}</b> vulnerabilities detected
                       </p>
 
-                      <Button onClick={handleViewResults} className="gap-2">
+                      <Button
+                        onClick={handleViewResults}
+                        className="gap-2"
+                      >
 
                         View Results
                         <ArrowRight className="w-4 h-4" />

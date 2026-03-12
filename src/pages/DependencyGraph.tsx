@@ -4,43 +4,60 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Network } from "lucide-react";
 import PageTransition from "@/components/PageTransition";
 
+interface GraphNode {
+  id: string;
+  type: string;
+}
+
+interface GraphEdge {
+  source: string;
+  target: string;
+}
+
+interface GraphData {
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+}
+
 const DependencyGraph = () => {
 
   const location = useLocation();
-  const graph = location.state?.graph;
+  const graph: GraphData = location.state?.graph ?? { nodes: [], edges: [] };
 
-  if (!graph) {
+  if (!graph.nodes.length) {
+
     return (
       <PageTransition>
         <div className="container pt-24">
-          <h1>No dependency graph available</h1>
+          <h1 className="text-xl font-bold">No dependency graph available</h1>
         </div>
       </PageTransition>
     );
+
   }
 
-  const nodes = graph.nodes || [];
-  const edges = graph.edges || [];
+  const nodes = graph.nodes;
+  const edges = graph.edges;
 
   const root = nodes[0];
   const dependencies = nodes.slice(1);
 
   const width = 1000;
   const rootX = width / 2;
-  const rootY = 80;
+  const rootY = 100;
 
   const perRow = 8;
-  const rowSpacing = 120;
+  const rowSpacing = 140;
   const colSpacing = width / (perRow + 1);
 
   const totalRows = Math.ceil(dependencies.length / perRow);
 
-  const svgHeight = 220 + totalRows * rowSpacing + 120;
+  const svgHeight = 260 + totalRows * rowSpacing + 150;
 
   const positionedNodes = [
     { ...root, x: rootX, y: rootY },
 
-    ...dependencies.map((node: any, i: number) => {
+    ...dependencies.map((node, i) => {
 
       const row = Math.floor(i / perRow);
       const col = i % perRow;
@@ -48,16 +65,18 @@ const DependencyGraph = () => {
       return {
         ...node,
         x: colSpacing * (col + 1),
-        y: 220 + row * rowSpacing
+        y: 260 + row * rowSpacing
       };
 
     })
+
   ];
 
   const findNode = (id: string) =>
     positionedNodes.find(n => n.id === id);
 
   return (
+
     <PageTransition>
 
       <div className="container pt-24">
@@ -68,11 +87,14 @@ const DependencyGraph = () => {
         </div>
 
         <Card className="bg-card/40 backdrop-blur-sm border-border/50">
-          <CardContent>
+
+          <CardContent className="overflow-x-auto">
 
             <svg width={width} height={svgHeight}>
 
-              {edges.map((edge: any, i: number) => {
+              {/* Edges */}
+
+              {edges.map((edge, i) => {
 
                 const source = findNode(edge.source);
                 const target = findNode(edge.target);
@@ -80,38 +102,42 @@ const DependencyGraph = () => {
                 if (!source || !target) return null;
 
                 return (
+
                   <line
                     key={i}
                     x1={source.x}
                     y1={source.y}
                     x2={target.x}
                     y2={target.y}
-                    stroke="#888"
+                    stroke="#6b7280"
                     strokeWidth="1.5"
                   />
+
                 );
 
               })}
 
-              {positionedNodes.map((node: any, i: number) => (
+              {/* Nodes */}
+
+              {positionedNodes.map((node, i) => (
 
                 <motion.g
                   key={node.id}
                   initial={{ opacity: 0, scale: 0 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: i * 0.03 }}
+                  transition={{ delay: i * 0.02 }}
                 >
 
                   <circle
                     cx={node.x}
                     cy={node.y}
-                    r={node.type === "root" ? 16 : 10}
-                    fill="#00e0ff"
+                    r={node.type === "root" ? 18 : 10}
+                    fill={node.type === "root" ? "#00e0ff" : "#38bdf8"}
                   />
 
                   <text
                     x={node.x}
-                    y={node.y + 22}
+                    y={node.y + 26}
                     textAnchor="middle"
                     fill="white"
                     fontSize="11"
@@ -126,11 +152,13 @@ const DependencyGraph = () => {
             </svg>
 
           </CardContent>
+
         </Card>
 
       </div>
 
     </PageTransition>
+
   );
 
 };

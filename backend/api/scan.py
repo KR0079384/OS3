@@ -1,47 +1,17 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
+
 from services.osv_service import get_vulnerabilities
-import requests
+from services.dependency_analyzer import scan_dependency_tree, tree_to_graph
 
 router = APIRouter()
 
+
 # -----------------------------
-# Request Body Model
+# Request Model
 # -----------------------------
 class PackageRequest(BaseModel):
     package_name: str
-
-
-# -----------------------------
-# Dependency Extraction
-# -----------------------------
-def get_package_dependencies(package_name: str):
-
-    url = f"https://registry.npmjs.org/{package_name}"
-
-    try:
-
-        response = requests.get(url)
-
-        if response.status_code != 200:
-            return []
-
-        data = response.json()
-
-        latest_version = data.get("dist-tags", {}).get("latest")
-
-        if not latest_version:
-            return []
-
-        version_data = data.get("versions", {}).get(latest_version, {})
-
-        dependencies = version_data.get("dependencies", {})
-
-        return list(dependencies.keys())
-
-    except Exception as e:
-        print("Dependency fetch error:", e)
-        return []
 
 
 # -----------------------------
@@ -58,39 +28,6 @@ def calculate_security_score(vulnerability_count: int):
 
 
 # -----------------------------
-# Dependency Graph Builder
-# -----------------------------
-def build_dependency_graph(package_name: str, dependencies: list):
-
-    nodes = []
-    edges = []
-
-    # Root node
-    nodes.append({
-        "id": package_name,
-        "type": "root"
-    })
-
-    # Dependency nodes
-    for dep in dependencies:
-
-        nodes.append({
-            "id": dep,
-            "type": "dependency"
-        })
-
-        edges.append({
-            "source": package_name,
-            "target": dep
-        })
-
-    return {
-        "nodes": nodes,
-        "edges": edges
-    }
-
-
-# -----------------------------
 # Scan Endpoint
 # -----------------------------
 @router.post("/scan-package")
@@ -100,15 +37,20 @@ def scan_package(request: PackageRequest):
 
     print("Scanning package:", package_name)
 
+    # -----------------------------
     # Vulnerability Scan
+    # -----------------------------
     result = get_vulnerabilities(package_name)
 
     if not result["success"]:
         return {
             "status": "Error",
-            "dependencies_found": 0,
-            "vulnerabilities": 0,
+            "package": package_name,
             "security_score": 0,
+            "dependencies_found": 0,
+            "dependencies": [],
+            "vulnerabilities": 0,
+            "vulnerability_details": [],
             "graph": {
                 "nodes": [],
                 "edges": []
@@ -118,10 +60,21 @@ def scan_package(request: PackageRequest):
     vulnerability_count = result["vulnerability_count"]
     vulnerabilities = result["vulnerabilities"]
 
-    # Extract Dependencies
-    dependencies = get_package_dependencies(package_name)
+    # -----------------------------
+    # Recursive Dependency Scan
+    # -----------------------------
+    tree = scan_dependency_tree(package_name)
 
-    # Calculate Security Score
+    graph = tree_to_graph(tree)
+
+    nodes = graph["nodes"]
+
+    # Remove root from dependency count
+    dependencies = [n["id"] for n in nodes if n["id"] != package_name]
+
+    # -----------------------------
+    # Security Score
+    # -----------------------------
     score = calculate_security_score(vulnerability_count)
 
     status = "Safe"
@@ -131,9 +84,9 @@ def scan_package(request: PackageRequest):
     elif vulnerability_count >= 2:
         status = "Moderate Risk"
 
-    # Build Dependency Graph
-    graph = build_dependency_graph(package_name, dependencies)
-
+    # -----------------------------
+    # Final Response
+    # -----------------------------
     return {
         "package": package_name,
         "security_score": score,
