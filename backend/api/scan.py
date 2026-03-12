@@ -2,7 +2,12 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 
 from services.osv_service import get_vulnerabilities
-from services.dependency_analyzer import scan_dependency_tree, tree_to_graph
+from services.dependency_analyzer import (
+    scan_dependency_tree,
+    tree_to_graph,
+    collect_all_packages
+)
+from services.attack_path_detector import find_attack_paths
 
 router = APIRouter()
 
@@ -38,39 +43,54 @@ def scan_package(request: PackageRequest):
     print("Scanning package:", package_name)
 
     # -----------------------------
-    # Vulnerability Scan
-    # -----------------------------
-    result = get_vulnerabilities(package_name)
-
-    if not result["success"]:
-        return {
-            "status": "Error",
-            "package": package_name,
-            "security_score": 0,
-            "dependencies_found": 0,
-            "dependencies": [],
-            "vulnerabilities": 0,
-            "vulnerability_details": [],
-            "graph": {
-                "nodes": [],
-                "edges": []
-            }
-        }
-
-    vulnerability_count = result["vulnerability_count"]
-    vulnerabilities = result["vulnerabilities"]
-
-    # -----------------------------
-    # Recursive Dependency Scan
+    # Build Dependency Tree
     # -----------------------------
     tree = scan_dependency_tree(package_name)
 
+    # -----------------------------
+    # Collect all packages
+    # -----------------------------
+    all_packages = collect_all_packages(tree)
+
+    print("All packages:", all_packages)
+
+    vulnerable_packages = []
+    vulnerability_details = []
+
+    # -----------------------------
+    # Check vulnerabilities for ALL packages
+    # -----------------------------
+    for pkg in all_packages:
+
+        result = get_vulnerabilities(pkg)
+
+        if not result["success"]:
+            continue
+
+        if result["vulnerability_count"] > 0:
+
+            vulnerable_packages.append(pkg)
+            vulnerability_details.extend(result["vulnerabilities"])
+
+    vulnerability_count = len(vulnerability_details)
+
+    print("Vulnerable packages:", vulnerable_packages)
+
+    # -----------------------------
+    # Build Graph
+    # -----------------------------
     graph = tree_to_graph(tree)
 
     nodes = graph["nodes"]
 
-    # Remove root from dependency count
     dependencies = [n["id"] for n in nodes if n["id"] != package_name]
+
+    # -----------------------------
+    # Detect Attack Paths
+    # -----------------------------
+    attack_paths = find_attack_paths(tree, vulnerable_packages)
+
+    print("Attack paths:", attack_paths)
 
     # -----------------------------
     # Security Score
@@ -94,6 +114,7 @@ def scan_package(request: PackageRequest):
         "dependencies_found": len(dependencies),
         "dependencies": dependencies,
         "vulnerabilities": vulnerability_count,
-        "vulnerability_details": vulnerabilities,
+        "vulnerability_details": vulnerability_details,
+        "attack_paths": attack_paths,
         "graph": graph
     }

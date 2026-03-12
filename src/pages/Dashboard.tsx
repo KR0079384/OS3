@@ -50,11 +50,13 @@ const Dashboard = () => {
   const graph: GraphData =
     location.state?.graph ?? { nodes: [], edges: [] };
 
+  /* NEW */
+  const attackPaths: string[][] = location.state?.attackPaths ?? [];
+
   // Derived metrics
   const safePackages = Math.max(0, dependencies - vulnerabilities);
   const highRisk = Math.max(0, Math.floor(vulnerabilities / 2));
 
-  // Score color
   const getScoreColor = (score: number) => {
 
     if (score >= 80) return "hsl(145 80% 50%)";
@@ -97,13 +99,11 @@ const Dashboard = () => {
     }
   ];
 
-  // Pie chart data
   const pieData = [
     { name: "Safe", value: safePackages, color: "hsl(145 80% 50%)" },
     { name: "Vulnerable", value: vulnerabilities, color: "hsl(45 100% 55%)" }
   ];
 
-  // Severity simulation (until CVSS parsing added)
   const severityData = [
     {
       name: "Critical",
@@ -127,14 +127,16 @@ const Dashboard = () => {
     }
   ];
 
-  // Circular score indicator
   const circumference = 2 * Math.PI * 80;
   const offset = circumference - (securityScore / 100) * circumference;
 
   const openGraph = () => {
 
     navigate("/graph", {
-      state: { graph }
+      state: {
+        graph,
+        attackPaths
+      }
     });
 
   };
@@ -294,86 +296,36 @@ const Dashboard = () => {
 
             </div>
 
-            {/* Charts */}
+            {/* NEW: Attack Paths */}
 
-            <div className="grid lg:grid-cols-2 gap-6">
+            {attackPaths.length > 0 && (
 
-              {/* Dependency Health */}
-
-              <Card className="bg-card/40 backdrop-blur-sm border-border/50">
+              <Card className="mb-8 bg-card/40 backdrop-blur-sm border-red-500/40">
 
                 <CardHeader>
-                  <CardTitle>Dependency Health</CardTitle>
+                  <CardTitle className="text-red-400">
+                    ⚠ Supply Chain Attack Paths
+                  </CardTitle>
                 </CardHeader>
 
                 <CardContent>
 
-                  <ResponsiveContainer width="100%" height={220}>
+                  {attackPaths.map((path, index) => (
 
-                    <PieChart>
+                    <div
+                      key={index}
+                      className="font-mono text-sm text-red-300 mb-2"
+                    >
+                      {path.join(" → ")}
+                    </div>
 
-                      <Pie
-                        data={pieData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={55}
-                        outerRadius={85}
-                        dataKey="value"
-                      >
-
-                        {pieData.map((d, i) => (
-                          <Cell key={i} fill={d.color} />
-                        ))}
-
-                      </Pie>
-
-                    </PieChart>
-
-                  </ResponsiveContainer>
+                  ))}
 
                 </CardContent>
 
               </Card>
 
-              {/* Severity Chart */}
-
-              <Card className="bg-card/40 backdrop-blur-sm border-border/50">
-
-                <CardHeader>
-                  <CardTitle>Vulnerability Severity</CardTitle>
-                </CardHeader>
-
-                <CardContent>
-
-                  <ResponsiveContainer width="100%" height={220}>
-
-                    <BarChart data={severityData}>
-
-                      <CartesianGrid strokeDasharray="3 3" />
-
-                      <XAxis dataKey="name" />
-
-                      <YAxis />
-
-                      <Tooltip />
-
-                      <Bar dataKey="count" radius={[4, 4, 0, 0]}>
-
-                        {severityData.map((d, i) => (
-                          <Cell key={i} fill={d.fill} />
-                        ))}
-
-                      </Bar>
-
-                    </BarChart>
-
-                  </ResponsiveContainer>
-
-                </CardContent>
-
-              </Card>
-
-            </div>
+            )}
 
             {/* Graph Button */}
 

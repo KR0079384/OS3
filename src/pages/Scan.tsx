@@ -28,6 +28,9 @@ const Scan = () => {
     edges: []
   });
 
+  /* NEW */
+  const [attackPaths, setAttackPaths] = useState<string[][]>([]);
+
   const navigate = useNavigate();
 
   const phases = [
@@ -60,6 +63,9 @@ const Scan = () => {
 
       setGraph(data.graph || { nodes: [], edges: [] });
 
+      /* NEW */
+      setAttackPaths(data.attack_paths || []);
+
     } catch (error) {
 
       console.error("Scan Error:", error);
@@ -70,6 +76,7 @@ const Scan = () => {
       setStatus("Error");
 
       setGraph({ nodes: [], edges: [] });
+      setAttackPaths([]);
 
     }
 
@@ -107,7 +114,8 @@ const Scan = () => {
         vulnerabilities,
         securityScore,
         status,
-        graph
+        graph,
+        attackPaths   // NEW
       }
     });
 
@@ -137,8 +145,6 @@ const Scan = () => {
             animate={{ opacity: 1, y: 0 }}
           >
 
-            {/* Header */}
-
             <div className="text-center mb-10">
 
               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-primary/30 bg-primary/5 mb-4">
@@ -157,8 +163,6 @@ const Scan = () => {
               </p>
 
             </div>
-
-            {/* Scan Card */}
 
             <Card className="mb-6 bg-card/40 backdrop-blur-sm border-border/50">
 
@@ -199,8 +203,6 @@ const Scan = () => {
               </CardContent>
 
             </Card>
-
-            {/* Scan Complete */}
 
             <AnimatePresence>
 

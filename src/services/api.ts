@@ -33,6 +33,8 @@ export interface ScanResponse {
   vulnerabilities: number;
   vulnerability_details: Vulnerability[];
   graph: DependencyGraph;
+
+  attack_paths?: string[][];
 }
 
 
@@ -66,7 +68,6 @@ export async function scanPackage(packageName: string): Promise<ScanResponse> {
 
     console.error("API Error:", error);
 
-    // Fallback safe response
     return {
       package: packageName,
       security_score: 0,
@@ -75,6 +76,7 @@ export async function scanPackage(packageName: string): Promise<ScanResponse> {
       dependencies: [],
       vulnerabilities: 0,
       vulnerability_details: [],
+      attack_paths: [],
       graph: {
         nodes: [],
         edges: []
