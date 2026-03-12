@@ -45,6 +45,25 @@ def scan_dependency_tree(package_name, depth=0, max_depth=2, visited=None):
 
 
 # -----------------------------
+# Collect all packages in tree
+# -----------------------------
+def collect_all_packages(tree):
+
+    packages = set()
+
+    def dfs(node):
+
+        packages.add(node["name"])
+
+        for child in node.get("dependencies", []):
+            dfs(child)
+
+    dfs(tree)
+
+    return list(packages)
+
+
+# -----------------------------
 # Convert Tree → Graph
 # -----------------------------
 def tree_to_graph(tree):

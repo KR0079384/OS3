@@ -22,7 +22,11 @@ interface GraphData {
 const DependencyGraph = () => {
 
   const location = useLocation();
+
   const graph: GraphData = location.state?.graph ?? { nodes: [], edges: [] };
+
+  // NEW
+  const attackPaths: string[][] = location.state?.attackPaths ?? [];
 
   if (!graph.nodes.length) {
 
@@ -75,6 +79,20 @@ const DependencyGraph = () => {
   const findNode = (id: string) =>
     positionedNodes.find(n => n.id === id);
 
+  // NEW
+  const attackEdgeSet = new Set<string>();
+
+  attackPaths.forEach(path => {
+
+    for (let i = 0; i < path.length - 1; i++) {
+
+      const key = `${path[i]}->${path[i + 1]}`;
+      attackEdgeSet.add(key);
+
+    }
+
+  });
+
   return (
 
     <PageTransition>
@@ -101,6 +119,10 @@ const DependencyGraph = () => {
 
                 if (!source || !target) return null;
 
+                const key = `${edge.source}->${edge.target}`;
+
+                const isAttackEdge = attackEdgeSet.has(key);
+
                 return (
 
                   <line
@@ -109,8 +131,8 @@ const DependencyGraph = () => {
                     y1={source.y}
                     x2={target.x}
                     y2={target.y}
-                    stroke="#6b7280"
-                    strokeWidth="1.5"
+                    stroke={isAttackEdge ? "#ef4444" : "#6b7280"}
+                    strokeWidth={isAttackEdge ? "3" : "1.5"}
                   />
 
                 );
