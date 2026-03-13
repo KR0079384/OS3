@@ -3,10 +3,13 @@ import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Network } from "lucide-react";
 import PageTransition from "@/components/PageTransition";
+import { useState } from "react";
 
 interface GraphNode {
   id: string;
   type: string;
+  x?: number;
+  y?: number;
 }
 
 interface GraphEdge {
@@ -23,10 +26,15 @@ const DependencyGraph = () => {
 
   const location = useLocation();
 
-  const graph: GraphData = location.state?.graph ?? { nodes: [], edges: [] };
+  const initialGraph: GraphData =
+    location.state?.graph ?? { nodes: [], edges: [] };
 
-  // NEW
-  const attackPaths: string[][] = location.state?.attackPaths ?? [];
+  const attackPaths: string[][] =
+    location.state?.attackPaths ?? [];
+
+  const [graph, setGraph] = useState<GraphData>(initialGraph);
+
+  const [showAttackPaths, setShowAttackPaths] = useState(false);
 
   if (!graph.nodes.length) {
 
@@ -43,43 +51,48 @@ const DependencyGraph = () => {
   const nodes = graph.nodes;
   const edges = graph.edges;
 
-  const root = nodes[0];
-  const dependencies = nodes.slice(1);
-
   const width = 1000;
-  const rootX = width / 2;
-  const rootY = 100;
 
   const perRow = 8;
   const rowSpacing = 140;
   const colSpacing = width / (perRow + 1);
 
-  const totalRows = Math.ceil(dependencies.length / perRow);
+  const totalRows = Math.ceil((nodes.length - 1) / perRow);
 
-  const svgHeight = 260 + totalRows * rowSpacing + 150;
+  const svgHeight = 260 + totalRows * rowSpacing + 200;
 
-  const positionedNodes = [
-    { ...root, x: rootX, y: rootY },
+  /* -----------------------------
+     Dynamic Node Layout
+  ----------------------------- */
 
-    ...dependencies.map((node, i) => {
+  const positionedNodes: GraphNode[] = nodes.map((node, i) => {
 
-      const row = Math.floor(i / perRow);
-      const col = i % perRow;
-
+    if (i === 0) {
       return {
         ...node,
-        x: colSpacing * (col + 1),
-        y: 260 + row * rowSpacing
+        x: width / 2,
+        y: 100
       };
+    }
 
-    })
+    const row = Math.floor((i - 1) / perRow);
+    const col = (i - 1) % perRow;
 
-  ];
+    return {
+      ...node,
+      x: colSpacing * (col + 1),
+      y: 260 + row * rowSpacing
+    };
+
+  });
 
   const findNode = (id: string) =>
     positionedNodes.find(n => n.id === id);
 
-  // NEW
+  /* -----------------------------
+     Attack Path Highlighting
+  ----------------------------- */
+
   const attackEdgeSet = new Set<string>();
 
   attackPaths.forEach(path => {
@@ -87,11 +100,55 @@ const DependencyGraph = () => {
     for (let i = 0; i < path.length - 1; i++) {
 
       const key = `${path[i]}->${path[i + 1]}`;
+
       attackEdgeSet.add(key);
 
     }
 
   });
+
+  /* -----------------------------
+     Expand Node
+  ----------------------------- */
+
+  const expandNode = async (nodeId: string) => {
+
+    try {
+
+      const res = await fetch(
+        `http://127.0.0.1:8000/api/expand-node?package=${nodeId}`
+      );
+
+      const data = await res.json();
+
+      const newNodes = data.nodes.filter(
+        (n: GraphNode) =>
+          !graph.nodes.some(existing => existing.id === n.id)
+      );
+
+      const newEdges = data.edges.filter(
+        (e: GraphEdge) =>
+          !graph.edges.some(
+            existing =>
+              existing.source === e.source &&
+              existing.target === e.target
+          )
+      );
+
+      if (newNodes.length === 0) return;
+
+      setGraph({
+        nodes: [...graph.nodes, ...newNodes],
+        edges: [...graph.edges, ...newEdges]
+      });
+
+    } catch (err) {
+
+      console.error("Expansion error:", err);
+
+    }
+
+  };
 
   return (
 
@@ -110,7 +167,9 @@ const DependencyGraph = () => {
 
             <svg width={width} height={svgHeight}>
 
-              {/* Edges */}
+              {/* -----------------------------
+                   EDGES
+              ----------------------------- */}
 
               {edges.map((edge, i) => {
 
@@ -121,7 +180,8 @@ const DependencyGraph = () => {
 
                 const key = `${edge.source}->${edge.target}`;
 
-                const isAttackEdge = attackEdgeSet.has(key);
+                const isAttackEdge =
+                  showAttackPaths && attackEdgeSet.has(key);
 
                 return (
 
@@ -139,7 +199,9 @@ const DependencyGraph = () => {
 
               })}
 
-              {/* Nodes */}
+              {/* -----------------------------
+                   NODES
+              ----------------------------- */}
 
               {positionedNodes.map((node, i) => (
 
@@ -147,7 +209,9 @@ const DependencyGraph = () => {
                   key={node.id}
                   initial={{ opacity: 0, scale: 0 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: i * 0.02 }}
+                  transition={{ delay: i * 0.03 }}
+                  onClick={() => expandNode(node.id)}
+                  style={{ cursor: "pointer" }}
                 >
 
                   <circle
@@ -176,6 +240,25 @@ const DependencyGraph = () => {
           </CardContent>
 
         </Card>
+
+        {/* -----------------------------
+            Show Attack Path Button
+        ----------------------------- */}
+
+        {nodes.length > 6 && (
+
+          <div className="flex justify-center mt-6">
+
+            <button
+              onClick={() => setShowAttackPaths(true)}
+              className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg"
+            >
+              Show Attack Paths
+            </button>
+
+          </div>
+
+        )}
 
       </div>
 
