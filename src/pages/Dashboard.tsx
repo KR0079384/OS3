@@ -36,12 +36,18 @@ interface GraphData {
   edges: any[];
 }
 
+interface Severity {
+  critical: number;
+  high: number;
+  medium: number;
+  low: number;
+}
+
 const Dashboard = () => {
 
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Safe fallback values
   const dependencies = location.state?.dependencies ?? 0;
   const vulnerabilities = location.state?.vulnerabilities ?? 0;
   const securityScore = location.state?.securityScore ?? 0;
@@ -50,10 +56,18 @@ const Dashboard = () => {
   const graph: GraphData =
     location.state?.graph ?? { nodes: [], edges: [] };
 
-  /* NEW */
-  const attackPaths: string[][] = location.state?.attackPaths ?? [];
+  const attackPaths: string[][] =
+    location.state?.attackPaths ?? [];
 
-  // Derived metrics
+  /* NEW: real severity from backend */
+  const severity: Severity =
+    location.state?.severity ?? {
+      critical: 0,
+      high: 0,
+      medium: 0,
+      low: 0
+    };
+
   const safePackages = Math.max(0, dependencies - vulnerabilities);
   const highRisk = Math.max(0, Math.floor(vulnerabilities / 2));
 
@@ -104,25 +118,27 @@ const Dashboard = () => {
     { name: "Vulnerable", value: vulnerabilities, color: "hsl(45 100% 55%)" }
   ];
 
+  /* REAL SEVERITY DATA */
+
   const severityData = [
     {
       name: "Critical",
-      count: Math.floor(vulnerabilities / 3),
+      count: severity.critical,
       fill: "hsl(0 85% 55%)"
     },
     {
       name: "High",
-      count: Math.floor(vulnerabilities / 2),
+      count: severity.high,
       fill: "hsl(20 85% 50%)"
     },
     {
       name: "Medium",
-      count: Math.floor(vulnerabilities / 2),
+      count: severity.medium,
       fill: "hsl(45 100% 55%)"
     },
     {
       name: "Low",
-      count: Math.max(0, vulnerabilities - 2),
+      count: severity.low,
       fill: "hsl(195 100% 50%)"
     }
   ];
@@ -166,8 +182,6 @@ const Dashboard = () => {
             animate={{ opacity: 1, y: 0 }}
           >
 
-            {/* Header */}
-
             <div className="flex items-center gap-3 mb-1">
 
               <Activity className="w-6 h-6 text-primary" />
@@ -189,8 +203,6 @@ const Dashboard = () => {
             {/* Score + Stats */}
 
             <div className="grid lg:grid-cols-3 gap-6 mb-8">
-
-              {/* Score Card */}
 
               <Card className="lg:col-span-1 bg-card/40 backdrop-blur-sm border-border/50">
 
@@ -249,8 +261,6 @@ const Dashboard = () => {
 
               </Card>
 
-              {/* Stats Cards */}
-
               <div className="lg:col-span-2 grid sm:grid-cols-2 gap-4">
 
                 {stats.map((s, i) => (
@@ -296,7 +306,45 @@ const Dashboard = () => {
 
             </div>
 
-            {/* NEW: Attack Paths */}
+            {/* SEVERITY CHART */}
+
+            <Card className="mb-8 bg-card/40 backdrop-blur-sm border-border/50">
+
+              <CardHeader>
+                <CardTitle>Vulnerability Severity</CardTitle>
+              </CardHeader>
+
+              <CardContent>
+
+                <ResponsiveContainer width="100%" height={260}>
+
+                  <BarChart data={severityData}>
+
+                    <CartesianGrid strokeDasharray="3 3" />
+
+                    <XAxis dataKey="name" />
+
+                    <YAxis />
+
+                    <Tooltip />
+
+                    <Bar dataKey="count">
+
+                      {severityData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.fill} />
+                      ))}
+
+                    </Bar>
+
+                  </BarChart>
+
+                </ResponsiveContainer>
+
+              </CardContent>
+
+            </Card>
+
+            {/* Attack Paths */}
 
             {attackPaths.length > 0 && (
 
@@ -326,8 +374,6 @@ const Dashboard = () => {
               </Card>
 
             )}
-
-            {/* Graph Button */}
 
             <div className="mt-8 flex justify-center">
 

@@ -24,6 +24,13 @@ export interface DependencyGraph {
   edges: GraphEdge[];
 }
 
+export interface Severity {
+  critical: number;
+  high: number;
+  medium: number;
+  low: number;
+}
+
 export interface ScanResponse {
   package: string;
   security_score: number;
@@ -31,6 +38,10 @@ export interface ScanResponse {
   dependencies_found: number;
   dependencies: string[];
   vulnerabilities: number;
+
+  /* FIX */
+  severity: Severity;
+
   vulnerability_details: Vulnerability[];
   graph: DependencyGraph;
 
@@ -75,6 +86,14 @@ export async function scanPackage(packageName: string): Promise<ScanResponse> {
       dependencies_found: 0,
       dependencies: [],
       vulnerabilities: 0,
+
+      severity: {
+        critical: 0,
+        high: 0,
+        medium: 0,
+        low: 0
+      },
+
       vulnerability_details: [],
       attack_paths: [],
       graph: {

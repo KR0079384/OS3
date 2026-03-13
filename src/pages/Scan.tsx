@@ -10,6 +10,13 @@ import PageTransition from "@/components/PageTransition";
 
 import { scanPackage, ScanResponse } from "@/services/api";
 
+interface Severity {
+  critical: number;
+  high: number;
+  medium: number;
+  low: number;
+}
+
 const Scan = () => {
 
   const [packageName, setPackageName] = useState("");
@@ -28,8 +35,14 @@ const Scan = () => {
     edges: []
   });
 
-  /* NEW */
   const [attackPaths, setAttackPaths] = useState<string[][]>([]);
+
+  const [severity, setSeverity] = useState<Severity>({
+    critical: 0,
+    high: 0,
+    medium: 0,
+    low: 0
+  });
 
   const navigate = useNavigate();
 
@@ -63,8 +76,16 @@ const Scan = () => {
 
       setGraph(data.graph || { nodes: [], edges: [] });
 
-      /* NEW */
       setAttackPaths(data.attack_paths || []);
+
+      setSeverity(
+        data.severity || {
+          critical: 0,
+          high: 0,
+          medium: 0,
+          low: 0
+        }
+      );
 
     } catch (error) {
 
@@ -77,6 +98,13 @@ const Scan = () => {
 
       setGraph({ nodes: [], edges: [] });
       setAttackPaths([]);
+
+      setSeverity({
+        critical: 0,
+        high: 0,
+        medium: 0,
+        low: 0
+      });
 
     }
 
@@ -115,7 +143,8 @@ const Scan = () => {
         securityScore,
         status,
         graph,
-        attackPaths   // NEW
+        attackPaths,
+        severity
       }
     });
 
