@@ -108,6 +108,31 @@ const DependencyGraph = () => {
   });
 
   /* -----------------------------
+     Detect Attack Nodes
+  ----------------------------- */
+
+  const attackNodeSet = new Set<string>();
+
+  attackPaths.forEach(path => {
+    path.forEach(node => attackNodeSet.add(node));
+  });
+
+  /* -----------------------------
+     Risk Color Logic
+  ----------------------------- */
+
+  const getNodeColor = (node: GraphNode) => {
+
+    if (node.type === "root") return "#00e0ff";
+
+    if (showAttackPaths && attackNodeSet.has(node.id)) {
+      return "#ef4444"; // red = high risk
+    }
+
+    return "#38bdf8"; // normal dependency
+  };
+
+  /* -----------------------------
      Expand Node
   ----------------------------- */
 
@@ -218,8 +243,17 @@ const DependencyGraph = () => {
                     cx={node.x}
                     cy={node.y}
                     r={node.type === "root" ? 18 : 10}
-                    fill={node.type === "root" ? "#00e0ff" : "#38bdf8"}
+                    fill={getNodeColor(node)}
                   />
+
+                  {/* Tooltip */}
+
+                  <title>
+                    {node.id}
+                    {attackNodeSet.has(node.id)
+                      ? " (High Risk Dependency)"
+                      : " (Dependency)"}
+                  </title>
 
                   <text
                     x={node.x}
@@ -253,7 +287,7 @@ const DependencyGraph = () => {
               onClick={() => setShowAttackPaths(true)}
               className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg"
             >
-              Show Attack Paths
+              Highlight Attack Paths
             </button>
 
           </div>
