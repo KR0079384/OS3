@@ -41,7 +41,11 @@ def scan(package: str):
     low = 0
 
     for vuln in vulnerabilities:
-        severity = vuln.get("database_specific", {}).get("severity", "").upper()
+
+        severity = vuln.get(
+            "database_specific",
+            {}
+        ).get("severity", "").upper()
 
         if severity == "CRITICAL":
             critical += 1
@@ -54,19 +58,35 @@ def scan(package: str):
 
     total_vulns = critical + high + medium + low
 
-    # Improved scoring formula
-    risk = (
-        critical * 10 +
-        high * 5 +
-        medium * 3 +
-        low * 1
+    # -----------------------------
+    # STANDARDIZED SCORING ENGINE
+    # -----------------------------
+
+    vulnerability_penalty = (
+        critical * 15 +
+        high * 10 +
+        medium * 5 +
+        low * 2
     )
 
-    security_score = max(5, 100 - risk)
+    attack_penalty = len(attack_paths) * 5
 
-    # Determine risk level
+    dependency_penalty = int(len(dependencies) / 5)
+
+    security_score = 100 - (
+        vulnerability_penalty +
+        attack_penalty +
+        dependency_penalty
+    )
+
+    security_score = max(0, security_score)
+
+    # -----------------------------
+    # RISK LEVEL
+    # -----------------------------
+
     if security_score >= 80:
-        status = "Low Risk"
+        status = "Secure"
     elif security_score >= 60:
         status = "Moderate Risk"
     elif security_score >= 40:
@@ -91,23 +111,57 @@ def scan(package: str):
 
     console.print(table)
 
-    # Attack paths section
+    # -----------------------------
+    # SCORE BREAKDOWN
+    # -----------------------------
+
+    console.print("\n[bold yellow]Security Score Breakdown:[/bold yellow]\n")
+
+    breakdown = Table()
+
+    breakdown.add_column("Factor")
+    breakdown.add_column("Penalty")
+
+    breakdown.add_row("Critical Vulnerabilities", f"-{critical * 15}")
+    breakdown.add_row("High Vulnerabilities", f"-{high * 10}")
+    breakdown.add_row("Medium Vulnerabilities", f"-{medium * 5}")
+    breakdown.add_row("Low Vulnerabilities", f"-{low * 2}")
+    breakdown.add_row("Attack Paths", f"-{attack_penalty}")
+    breakdown.add_row("Dependency Complexity", f"-{dependency_penalty}")
+
+    console.print(breakdown)
+
+    # -----------------------------
+    # ATTACK PATHS
+    # -----------------------------
+
     if attack_paths:
+
         console.print("\n[bold red]Potential Attack Paths:[/bold red]\n")
 
         for path in attack_paths[:5]:
             console.print(" → ".join(path))
 
     else:
+
         console.print("\n[green]No attack paths detected.[/green]")
 
-    # Top vulnerabilities section
+    # -----------------------------
+    # TOP VULNERABILITIES
+    # -----------------------------
+
     if vulnerabilities:
+
         console.print("\n[bold yellow]Top Vulnerabilities:[/bold yellow]\n")
 
         for vuln in vulnerabilities[:5]:
+
             summary = vuln.get("summary", "No description")
-            severity = vuln.get("database_specific", {}).get("severity", "UNKNOWN")
+
+            severity = vuln.get(
+                "database_specific",
+                {}
+            ).get("severity", "UNKNOWN")
 
             console.print(
                 Panel(

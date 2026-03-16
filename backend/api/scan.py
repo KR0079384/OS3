@@ -16,15 +16,31 @@ class PackageRequest(BaseModel):
     package_name: str
 
 
-def calculate_security_score(vulnerability_count: int):
+def calculate_security_score(severity, attack_paths, dependencies):
 
-    score = 100 - (vulnerability_count * 10)
+    critical = severity.get("critical", 0)
+    high = severity.get("high", 0)
+    medium = severity.get("medium", 0)
+    low = severity.get("low", 0)
 
-    if score < 0:
-        score = 0
+    vulnerability_penalty = (
+        critical * 15 +
+        high * 10 +
+        medium * 5 +
+        low * 2
+    )
 
-    return score
+    attack_penalty = len(attack_paths) * 5
 
+    dependency_penalty = int(dependencies / 5)
+
+    score = 100 - (
+        vulnerability_penalty +
+        attack_penalty +
+        dependency_penalty
+    )
+
+    return max(0, score)
 
 @router.post("/scan-package")
 def scan_package(request: PackageRequest):
@@ -73,14 +89,20 @@ def scan_package(request: PackageRequest):
 
     attack_paths = find_attack_paths(tree, vulnerable_packages)
 
-    score = calculate_security_score(vulnerability_count)
+    score = calculate_security_score(
+    severity_total,
+    attack_paths,
+    len(all_packages) - 1)
 
-    status = "Safe"
 
-    if vulnerability_count >= 5:
-        status = "High Risk"
-    elif vulnerability_count >= 2:
+    if score >= 80:
+        status = "Secure"
+    elif score >= 60:
         status = "Moderate Risk"
+    elif score >= 40:
+        status = "High Risk"
+    else:
+        status = "Critical Risk"
 
     # IMPORTANT CHANGE
     # Graph initially contains ONLY root node
