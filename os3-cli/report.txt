@@ -1,0 +1,37 @@
+
+OS3 SECURITY AUDIT REPORT
+=========================
+
+Package: express
+
+Dependencies: 41
+
+Severity
+--------
+Critical: 0
+High: 13
+Medium: 8
+Low: 9
+
+Attack Paths
+------------
+express -> send -> debug
+express -> send -> fresh
+express -> send -> ms
+express -> router -> debug
+express -> router -> path-to-regexp
+express -> accepts -> negotiator
+express -> proxy-addr -> forwarded
+express -> body-parser -> debug
+express -> body-parser -> qs
+express -> finalhandler -> debug
+
+
+Security Score: 0/100
+Risk Level: [red]CRITICAL RISK[/red]
+
+Recommendations
+---------------
+Upgrade vulnerable dependencies
+Patch high severity packages
+Avoid vulnerable transitive dependencies
