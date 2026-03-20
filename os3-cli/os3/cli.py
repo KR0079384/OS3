@@ -1,6 +1,23 @@
 import typer
 import requests
 import json
+import time
+import sys
+import subprocess
+import os
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent
+BACKEND_DIR = BASE_DIR / "backend"
+
+VENV_DIR = BACKEND_DIR / "venv"
+
+if os.name == "nt":
+    PYTHON_PATH = VENV_DIR / "Scripts" / "python.exe"
+else:
+    PYTHON_PATH = VENV_DIR / "bin" / "python"
+
+
 from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
@@ -12,14 +29,106 @@ console = Console()
 API_URL = "http://127.0.0.1:8000/api/scan-package"
 
 
+# ------------------------------------------------
+# BACKEND AUTO START
+# ------------------------------------------------
+
+
+def ensure_backend_running():
+
+    # Check if backend already running
+    try:
+        requests.get("http://127.0.0.1:8000/docs", timeout=2)
+        return
+    except:
+        console.print("[yellow]Starting OS³ backend server...[/yellow]")
+
+    backend_dir = str(BACKEND_DIR)
+    venv_dir = str(VENV_DIR)
+
+    # OS-specific python inside venv
+    if os.name == "nt":
+        venv_python = os.path.join(venv_dir, "Scripts", "python.exe")
+    else:
+        venv_python = os.path.join(venv_dir, "bin", "python")
+
+    # ----------------------------------------
+    # STEP 1 — Create venv (VERY IMPORTANT FIX)
+    # ----------------------------------------
+    if not os.path.exists(venv_dir):
+
+        console.print("[cyan]Creating backend virtual environment...[/cyan]")
+
+        # Use system Python 3.10 (NOT venv python)
+        subprocess.run(
+            ["py", "-3.10", "-m", "venv", "venv"],
+            cwd=backend_dir,
+            check=True
+        )
+
+    # ----------------------------------------
+    # STEP 2 — Install dependencies
+    # ----------------------------------------
+    if not os.path.exists(venv_python):
+        console.print("[red]Backend Python not found[/red]")
+        raise typer.Exit()
+
+    console.print("[cyan]Installing backend dependencies...[/cyan]")
+
+    subprocess.run(
+        [venv_python, "-m", "pip", "install", "-r", "requirements.txt"],
+        cwd=backend_dir,
+        check=True
+    )
+
+    # ----------------------------------------
+    # STEP 3 — Start backend
+    # ----------------------------------------
+    console.print("[cyan]Launching backend server...[/cyan]")
+
+    subprocess.Popen(
+        [
+            venv_python,
+            "-m",
+            "uvicorn",
+            "main:app",
+            "--port",
+            "8000"
+        ],
+        cwd=backend_dir,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL
+    )
+
+    # ----------------------------------------
+    # STEP 4 — Wait for backend
+    # ----------------------------------------
+    for _ in range(15):
+        try:
+            requests.get("http://127.0.0.1:8000/docs", timeout=2)
+            console.print("[green]Backend started successfully[/green]")
+            return
+        except:
+            time.sleep(1)
+
+    console.print("[red]Backend failed to start[/red]")
+    raise typer.Exit()
+
+# ------------------------------------------------
+# API CALL
+# ------------------------------------------------
+
 def fetch_scan(package: str):
+
+    ensure_backend_running()
 
     try:
         response = requests.post(
             API_URL,
             json={"package_name": package},
-            timeout=120
+            timeout=60
         )
+
     except requests.exceptions.RequestException as e:
         console.print(f"[bold red]API connection error:[/bold red] {e}")
         raise typer.Exit()
@@ -28,20 +137,30 @@ def fetch_scan(package: str):
         console.print(f"[bold red]API Error:[/bold red] {response.text}")
         raise typer.Exit()
 
-    return response.json()
+    data = response.json()
 
+    if "error" in data:
+        console.print(f"[bold red]❌ {data.get('message')}[/bold red]")
+        raise typer.Exit()
+
+    return data
+
+
+# ------------------------------------------------
+# SECURITY SCORE MODEL
+# ------------------------------------------------
 
 def calculate_score(dependencies, critical, high, medium, low, attack_paths):
 
     vulnerability_penalty = (
-        critical * 15 +
-        high * 10 +
-        medium * 5 +
-        low * 2
+        critical * 10 +
+        high * 7 +
+        medium * 4 +
+        low * 1
     )
 
-    attack_penalty = len(attack_paths) * 5
-    dependency_penalty = int(len(dependencies) / 5)
+    attack_penalty = len(attack_paths) * 3
+    dependency_penalty = int(len(dependencies) / 8)
 
     score = 100 - (vulnerability_penalty + attack_penalty + dependency_penalty)
 
@@ -91,13 +210,11 @@ def generate_report(
         "risk_level": status
     }
 
-    # JSON REPORT
     if filename.endswith(".json"):
 
         with open(filename, "w") as f:
             json.dump(report_data, f, indent=4)
 
-    # TEXT REPORT
     else:
 
         content = f"""
@@ -145,6 +262,8 @@ Avoid vulnerable transitive dependencies
 @app.command()
 def scan(package: str, report: str = typer.Option(None, help="Export report file")):
 
+    start_time = time.time()
+
     console.rule("[bold cyan]OS³ Supply Chain Security Scanner")
 
     console.print(f"\n[bold cyan]Scanning package:[/bold cyan] {package}\n")
@@ -155,32 +274,30 @@ def scan(package: str, report: str = typer.Option(None, help="Export report file
     vulnerabilities = data.get("vulnerability_details", [])
     attack_paths = data.get("attack_paths", [])
 
-    critical = 0
-    high = 0
-    medium = 0
-    low = 0
+    # remove duplicate vulnerabilities
+    seen_ids = set()
+    unique_vulns = []
 
-    dependency_risk = {}
+    for v in vulnerabilities:
+        vid = v.get("id") or v.get("summary")
+        if vid not in seen_ids:
+            seen_ids.add(vid)
+            unique_vulns.append(v)
+
+    vulnerabilities = unique_vulns
+
+    critical = high = medium = low = 0
 
     for vuln in vulnerabilities:
 
         severity = vuln.get("database_specific", {}).get("severity", "").upper()
-        package_name = vuln.get("package", "unknown")
-
-        dependency_risk.setdefault(package_name, "LOW")
 
         if severity == "CRITICAL":
             critical += 1
-            dependency_risk[package_name] = "CRITICAL"
-
         elif severity == "HIGH":
             high += 1
-            dependency_risk[package_name] = "HIGH"
-
         elif severity in ["MEDIUM", "MODERATE"]:
             medium += 1
-            dependency_risk[package_name] = "MEDIUM"
-
         elif severity == "LOW":
             low += 1
 
@@ -198,7 +315,6 @@ def scan(package: str, report: str = typer.Option(None, help="Export report file
     status = risk_level(score)
 
     table = Table(title=f"OS³ Security Report — {package}")
-
     table.add_column("Metric", style="cyan")
     table.add_column("Value", style="magenta")
 
@@ -214,28 +330,20 @@ def scan(package: str, report: str = typer.Option(None, help="Export report file
 
     console.print(table)
 
-    # --------------------------------
-    # SCORE BREAKDOWN
-    # --------------------------------
-
     console.print("\n[bold yellow]Security Score Breakdown[/bold yellow]\n")
 
     breakdown = Table()
     breakdown.add_column("Factor")
     breakdown.add_column("Penalty")
 
-    breakdown.add_row("Critical Vulnerabilities", f"-{critical*15}")
-    breakdown.add_row("High Vulnerabilities", f"-{high*10}")
-    breakdown.add_row("Medium Vulnerabilities", f"-{medium*5}")
-    breakdown.add_row("Low Vulnerabilities", f"-{low*2}")
+    breakdown.add_row("Critical Vulnerabilities", f"-{critical*10}")
+    breakdown.add_row("High Vulnerabilities", f"-{high*7}")
+    breakdown.add_row("Medium Vulnerabilities", f"-{medium*4}")
+    breakdown.add_row("Low Vulnerabilities", f"-{low*1}")
     breakdown.add_row("Attack Paths", f"-{attack_penalty}")
     breakdown.add_row("Dependency Complexity", f"-{dependency_penalty}")
 
     console.print(breakdown)
-
-    # --------------------------------
-    # ATTACK PATHS
-    # --------------------------------
 
     if attack_paths:
 
@@ -245,12 +353,7 @@ def scan(package: str, report: str = typer.Option(None, help="Export report file
             console.print(" → ".join(path))
 
     else:
-
         console.print("\n[green]No attack paths detected.[/green]")
-
-    # --------------------------------
-    # VULNERABILITIES
-    # --------------------------------
 
     if vulnerabilities:
 
@@ -260,18 +363,15 @@ def scan(package: str, report: str = typer.Option(None, help="Export report file
 
             summary = vuln.get("summary", "No description")
             severity = vuln.get("database_specific", {}).get("severity", "UNKNOWN")
+            pkg = vuln.get("package", "dependency")
 
             console.print(
                 Panel(
                     summary,
-                    title=f"Severity: {severity}",
+                    title=f"{pkg} | Severity: {severity}",
                     expand=False
                 )
             )
-
-    # --------------------------------
-    # REPORT EXPORT
-    # --------------------------------
 
     if report:
 
@@ -289,6 +389,9 @@ def scan(package: str, report: str = typer.Option(None, help="Export report file
         )
 
         console.print(f"\n[bold green]Report saved to:[/bold green] {report}")
+
+    end_time = time.time()
+    console.print(f"\n[dim]Scan completed in {round(end_time-start_time,2)} seconds[/dim]")
 
 
 # ------------------------------------------------
@@ -313,7 +416,7 @@ def graph(package: str):
 
 
 # ------------------------------------------------
-# INSTALL CHECK COMMAND
+# INSTALL CHECK
 # ------------------------------------------------
 
 @app.command()
@@ -326,16 +429,13 @@ def check_install(package: str):
     score = data.get("security_score", 0)
 
     if score < 40:
-
         console.print("\n[bold red]⚠ Security Warning[/bold red]")
         console.print("Package has serious vulnerabilities")
 
     elif score < 70:
-
         console.print("\n[yellow]⚠ Moderate risk detected[/yellow]")
 
     else:
-
         console.print("\n[green]Package appears safe[/green]")
 
 
