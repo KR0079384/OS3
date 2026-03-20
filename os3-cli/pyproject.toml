@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "os3-security"
+version = "0.1.2"
+description = "OS3 Open Source Supply Chain Security Scanner"
+readme = "README.md"
+requires-python = ">=3.9"
+authors = [
+  {name = "OS3 Team"}
+]
+
+dependencies = [
+  "typer",
+  "rich",
+  "requests"
+]
+
+[project.scripts]
+os3 = "os3.cli:app"

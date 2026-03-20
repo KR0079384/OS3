@@ -1,0 +1,69 @@
+{
+    "package": "express",
+    "dependencies": 41,
+    "severity": {
+        "critical": 0,
+        "high": 13,
+        "medium": 8,
+        "low": 9
+    },
+    "attack_paths": [
+        [
+            "express",
+            "send",
+            "debug"
+        ],
+        [
+            "express",
+            "send",
+            "fresh"
+        ],
+        [
+            "express",
+            "send",
+            "ms"
+        ],
+        [
+            "express",
+            "router",
+            "debug"
+        ],
+        [
+            "express",
+            "router",
+            "path-to-regexp"
+        ],
+        [
+            "express",
+            "accepts",
+            "negotiator"
+        ],
+        [
+            "express",
+            "proxy-addr",
+            "forwarded"
+        ],
+        [
+            "express",
+            "body-parser",
+            "debug"
+        ],
+        [
+            "express",
+            "body-parser",
+            "qs"
+        ],
+        [
+            "express",
+            "finalhandler",
+            "debug"
+        ],
+        [
+            "express",
+            "serve-static",
+            "send"
+        ]
+    ],
+    "security_score": 0,
+    "risk_level": "[red]CRITICAL RISK[/red]"
+}
