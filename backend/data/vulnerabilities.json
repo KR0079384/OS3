@@ -1,0 +1,66 @@
+[
+    {
+        "package": "lodash",
+        "version": "< 4.17.21",
+        "risk": "Prototype Pollution",
+        "severity": "High",
+        "cve": "CVE-2021-23337",
+        "fix": "Upgrade to lodash 4.17.21"
+    },
+    {
+        "package": "axios",
+        "version": "< 1.6.0",
+        "risk": "SSRF vulnerability",
+        "severity": "Medium",
+        "cve": "CVE-2023-45857",
+        "fix": "Upgrade to axios 1.6.0 or higher"
+    },
+    {
+        "package": "jsonwebtoken",
+        "version": "< 9.0.0",
+        "risk": "Algorithm confusion attack",
+        "severity": "Critical",
+        "cve": "CVE-2022-23529",
+        "fix": "Upgrade to jsonwebtoken 9.0.0"
+    },
+    {
+        "package": "express",
+        "version": "< 4.19.2",
+        "risk": "Open Redirect vulnerability",
+        "severity": "Medium",
+        "cve": "CVE-2024-29041",
+        "fix": "Upgrade to express 4.19.2"
+    },
+    {
+        "package": "moment",
+        "version": "any",
+        "risk": "ReDoS and unmaintained package",
+        "severity": "High",
+        "cve": "CVE-2022-24785",
+        "fix": "Switch to date-fns or dayjs"
+    },
+    {
+        "package": "node-fetch",
+        "version": "< 2.6.7",
+        "risk": "Exposure of sensitive information",
+        "severity": "High",
+        "cve": "CVE-2022-0235",
+        "fix": "Upgrade to node-fetch 2.6.7"
+    },
+    {
+        "package": "minimist",
+        "version": "< 1.2.6",
+        "risk": "Prototype Pollution",
+        "severity": "Critical",
+        "cve": "CVE-2021-44906",
+        "fix": "Upgrade to minimist 1.2.6"
+    },
+    {
+        "package": "requests",
+        "version": "< 2.31.0",
+        "risk": "Proxy credential leak",
+        "severity": "Medium",
+        "cve": "CVE-2023-32681",
+        "fix": "Upgrade to requests 2.31.0"
+    }
+]
