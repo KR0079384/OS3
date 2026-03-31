@@ -1,0 +1,15 @@
+{
+    "project": "OS3 - Open Source Security Score Platform",
+    "problem": "Developers unknowingly use insecure or vulnerable open-source packages",
+    "solution": "OS3 analyzes dependencies, assigns security scores, detects CVEs, and provides AI-driven fix recommendations",
+    "features": [
+        "Dependency Graph Visualization",
+        "Vulnerability Detection using CVE databases",
+        "Security Score per package",
+        "AI Copilot for security Q&A",
+        "Attack Path Analysis",
+        "Fix Recommendations and safer alternatives"
+    ],
+    "how_to_use": "Upload your package.json or requirements.txt and OS3 will scan all dependencies for known vulnerabilities",
+    "tech_stack": "React, Vite, FastAPI, FAISS, Sentence Transformers, Ollama"
+}
