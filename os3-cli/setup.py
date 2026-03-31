@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="os3-security",
-    version="0.1.2",
+    version="0.1.5",
     description="OS³ Supply Chain Security Scanner",
     author="OS3 Team",
 
