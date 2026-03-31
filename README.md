@@ -1,123 +1,42 @@
-# ⚡ AutoOps — Autonomous Meeting-to-Execution Engine
+# 🔐 OS3 - Open Source Supply Chain Security Scanner
 
-> *Stop managing tasks. Start executing them.*
+## 🚀 Overview
+OS3 is a developer-first security tool designed to analyze open-source packages **before installation**.  
+It helps developers identify vulnerabilities, detect fake packages, and understand attack paths in real time.
 
----
-
-## 🧠 What is AutoOps?
-
-**AutoOps** is an AI-powered autonomous execution engine that converts meeting notes, voice inputs, and task descriptions into real actions — automatically.
-
-No more copy-pasting tasks from Notion to Jira. No more *"did anyone action that?"* moments.
-AutoOps listens, understands, and **executes**.
+👉 Instead of reacting after installation, OS3 enables **proactive security decisions**.
 
 ---
 
-## ✨ Features
+## ❗ Problem Statement
+Modern development relies heavily on open-source packages.  
+However:
 
-- 🎙️ **Meeting-to-Task Pipeline** — Extracts actionable items from meeting transcripts automatically
-- 🤖 **5 Autonomous Agents** — Handle scheduling, delegation, follow-ups, reminders, and reporting
-- 🔄 **n8n Workflow Integration** — Visual agentic workflows that trigger real-world actions
-- 🔐 **Auth System** — Email/password + Google OAuth via Supabase
-- 📅 **Background Scheduling** — APScheduler handles time-sensitive agent jobs
-- 💾 **Dual Storage** — Supabase (cloud) with SQLite fallback for offline resilience
-- ⚡ **Real-time UI** — React + Vite frontend with live task status updates
-
----
-
-## 🛠️ Tech Stack
-
-| Layer | Technology |
-|-------|-----------|
-| Frontend | React, Vite, TypeScript, Tailwind CSS |
-| Backend | FastAPI, Python 3.10+ |
-| Auth & DB | Supabase (PostgreSQL) |
-| Fallback DB | SQLite |
-| Agentic Layer | n8n Workflows |
-| Scheduler | APScheduler |
+- Developers install packages without knowing their risks  
+- Existing tools analyze vulnerabilities only after installation  
+- Fake or malicious packages can easily enter the system  
+- No visibility into how vulnerabilities propagate through dependencies  
 
 ---
 
-## 🏗️ Architecture
+## 💡 Solution
+OS3 provides **pre-installation security analysis** through:
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                      AutoOps System                      │
-│                                                          │
-│   ┌──────────────┐   REST    ┌──────────────────────┐   │
-│   │ React + Vite │ ◄───────► │   FastAPI Backend    │   │
-│   │  (Port 5173) │           │    (Port 8000)       │   │
-│   └──────────────┘           └──────────┬───────────┘   │
-│                                         │               │
-│          ┌──────────────────────────────┼─────────────┐ │
-│          │                              │             │ │
-│  ┌───────▼───────┐          ┌──────────▼──────┐ ┌───▼─┐ │
-│  │   Supabase    │          │  n8n Workflows  │ │SQLi │ │
-│  │  Auth + DB    │          │  Agentic Layer  │ │ te  │ │
-│  └───────────────┘          └────────┬────────┘ └─────┘ │
-│                                      │                  │
-│                           ┌──────────▼──────────┐       │
-│                           │      5 Agents        │      │
-│                           │  Extractor│Scheduler │      │
-│                           │  Delegator│Reminder  │      │
-│                           │       Reporter       │      │
-│                           └──────────────────────┘      │
-└─────────────────────────────────────────────────────────┘
-```
+- 🔍 Dependency analysis  
+- ⚠️ Vulnerability detection  
+- 🛣️ Attack path identification  
+- 🧠 Security scoring system  
+- 🚫 Fake package detection  
 
 ---
 
-## 🤖 The 5 Agents
+## 🌟 Key Features
 
-| Agent | Role |
-|-------|------|
-| 📋 **Extractor** | Parses meeting transcripts into structured tasks |
-| 📅 **Scheduler** | Assigns deadlines and time slots automatically |
-| 👥 **Delegator** | Routes tasks to the right team members |
-| 🔔 **Reminder** | Sends follow-up nudges before deadlines |
-| 📊 **Reporter** | Generates post-meeting summaries and status reports |
+### 💻 CLI Tool (Global via PyPI)
+- Install with a single command
+- Works directly in developer workflow
+- No setup required
 
----
-
-## 🚀 Quick Start
-
-### Prerequisites
-- Node.js 18+
-- Python 3.10+
-- Supabase account
-- n8n instance (cloud or self-hosted)
-
-### 1. Clone the repo
 ```bash
-git clone https://github.com/yourusername/autoops.git
-cd autoops
-```
-
-### 2. Backend setup
-```bash
-cd backend
-python -m venv venv
-source venv/bin/activate       # Windows: venv\Scripts\activate
-pip install -r requirements.txt
-cp .env.example .env            # Fill in your keys
-uvicorn main:app --reload --port 8000
-```
-
-### 3. Frontend setup
-```bash
-cd auto-action-ui
-npm install
-cp .env.example .env            # Fill in your Supabase keys
-npm run dev                     # http://localhost:5173
-```
-
-
-
-## 📄 License
-
-MIT License — see [LICENSE](LICENSE) for details.
-
----
-
-*If this saved you from another pointless follow-up meeting, drop a ⭐ — it means a lot!*
+pip install os3-security
 

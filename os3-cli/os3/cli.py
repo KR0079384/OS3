@@ -36,7 +36,20 @@ API_URL = "http://127.0.0.1:8000/api/scan-package"
 
 def ensure_backend_running():
 
-    # Check if backend already running
+    # ✅ Check if Python is installed
+    try:
+        subprocess.run(
+            ["python", "--version"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            check=True
+        )
+    except:
+        console.print("\n[bold red]❌ Python is not installed[/bold red]")
+        console.print("[yellow]👉 Please install Python 3.10+ from https://python.org[/yellow]\n")
+        raise typer.Exit()
+
+    # ✅ Check if backend already running
     try:
         requests.get("http://127.0.0.1:8000/docs", timeout=2)
         return
@@ -46,44 +59,52 @@ def ensure_backend_running():
     backend_dir = str(BACKEND_DIR)
     venv_dir = str(VENV_DIR)
 
-    # OS-specific python inside venv
+    # OS-specific python path
     if os.name == "nt":
         venv_python = os.path.join(venv_dir, "Scripts", "python.exe")
     else:
         venv_python = os.path.join(venv_dir, "bin", "python")
 
-    # ----------------------------------------
-    # STEP 1 — Create venv (VERY IMPORTANT FIX)
-    # ----------------------------------------
+    # -------------------------
+    # STEP 1 — Create venv
+    # -------------------------
     if not os.path.exists(venv_dir):
-
         console.print("[cyan]Creating backend virtual environment...[/cyan]")
 
-        # Use system Python 3.10 (NOT venv python)
         subprocess.run(
-            ["py", "-3.10", "-m", "venv", "venv"],
+            [sys.executable, "-m", "venv", "venv"],
             cwd=backend_dir,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
             check=True
         )
 
-    # ----------------------------------------
-    # STEP 2 — Install dependencies
-    # ----------------------------------------
+    # -------------------------
+    # STEP 2 — Install deps
+    # -------------------------
     if not os.path.exists(venv_python):
         console.print("[red]Backend Python not found[/red]")
         raise typer.Exit()
 
-    console.print("[cyan]Installing backend dependencies...[/cyan]")
+    flag_file = os.path.join(venv_dir, ".installed")
 
-    subprocess.run(
-        [venv_python, "-m", "pip", "install", "-r", "requirements.txt"],
-        cwd=backend_dir,
-        check=True
-    )
+    if not os.path.exists(flag_file):
+        console.print("[cyan]Installing backend dependencies...[/cyan]")
 
-    # ----------------------------------------
+        subprocess.run(
+            [venv_python, "-m", "pip", "install", "-r", "requirements.txt"],
+            cwd=backend_dir,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            check=True
+        )
+
+        with open(flag_file, "w") as f:
+            f.write("done")
+
+    # -------------------------
     # STEP 3 — Start backend
-    # ----------------------------------------
+    # -------------------------
     console.print("[cyan]Launching backend server...[/cyan]")
 
     subprocess.Popen(
@@ -100,9 +121,9 @@ def ensure_backend_running():
         stderr=subprocess.DEVNULL
     )
 
-    # ----------------------------------------
-    # STEP 4 — Wait for backend
-    # ----------------------------------------
+    # -------------------------
+    # STEP 4 — Wait for server
+    # -------------------------
     for _ in range(15):
         try:
             requests.get("http://127.0.0.1:8000/docs", timeout=2)
@@ -122,6 +143,10 @@ def fetch_scan(package: str):
 
     ensure_backend_running()
 
+    # 🔥 NEW — suspicious warning
+    if is_suspicious_package(package):
+        console.print("\n[yellow]⚠ Warning: This package looks suspicious or invalid[/yellow]\n")
+
     try:
         response = requests.post(
             API_URL,
@@ -133,8 +158,9 @@ def fetch_scan(package: str):
         console.print(f"[bold red]API connection error:[/bold red] {e}")
         raise typer.Exit()
 
+    # 🔥 IMPROVED ERROR
     if response.status_code != 200:
-        console.print(f"[bold red]API Error:[/bold red] {response.text}")
+        console.print("[bold red]❌ Package not found or invalid[/bold red]")
         raise typer.Exit()
 
     data = response.json()
@@ -144,6 +170,68 @@ def fetch_scan(package: str):
         raise typer.Exit()
 
     return data
+
+def fetch_npm_info(package: str):
+    try:
+        res = requests.get(f"https://registry.npmjs.org/{package}", timeout=5)
+
+        if res.status_code != 200:
+            return None
+
+        data = res.json()
+
+        latest_version = data.get("dist-tags", {}).get("latest")
+        versions = data.get("versions", {})
+
+        return {
+            "latest_version": latest_version,
+            "version_count": len(versions),
+            "time": data.get("time", {})
+        }
+
+    except:
+        return None
+
+def fetch_downloads(package: str):
+    try:
+        res = requests.get(
+            f"https://api.npmjs.org/downloads/point/last-week/{package}",
+            timeout=5
+        )
+        if res.status_code == 200:
+            return res.json().get("downloads", 0)
+    except:
+        return 0
+
+    return 0
+
+def evaluate_package(package: str):
+
+    npm_info = fetch_npm_info(package)
+    downloads = fetch_downloads(package)
+
+    if not npm_info:
+        return "❌ Not found on npm", 0
+
+    score = 100
+
+    # Low downloads → suspicious
+    if downloads < 100:
+        score -= 40
+    elif downloads < 1000:
+        score -= 20
+
+    # Very few versions → immature
+    if npm_info["version_count"] < 5:
+        score -= 20
+
+    # Final verdict
+    if score < 40:
+        return "🚨 HIGH RISK (Possible fake package)", score
+    elif score < 70:
+        return "⚠ Moderate Risk", score
+    else:
+        return "✅ Trusted Package", score
 
 
 # ------------------------------------------------
@@ -268,11 +356,28 @@ def scan(package: str, report: str = typer.Option(None, help="Export report file
 
     console.print(f"\n[bold cyan]Scanning package:[/bold cyan] {package}\n")
 
+    # 🔥 NEW — NPM TRUST FIRST (better UX)
+    status_msg, trust_score = evaluate_package(package)
+
+    console.print(Panel(
+        f"{status_msg}\nTrust Score: {trust_score}/100",
+        title="NPM Trust Analysis",
+        border_style="cyan"
+    ))
+
+    # 🚨 Suspicious names warning
+    if package.lower() in ["test", "example", "demo"]:
+        console.print("[yellow]⚠ This package name is commonly used and may be unsafe[/yellow]\n")
+
     data = fetch_scan(package)
 
     dependencies = data.get("dependencies", [])
     vulnerabilities = data.get("vulnerability_details", [])
     attack_paths = data.get("attack_paths", [])
+
+    # 🚨 Low-quality package warning
+    if len(dependencies) < 5:
+        console.print("[yellow]⚠ Low dependency ecosystem — possible low-quality package[/yellow]\n")
 
     # remove duplicate vulnerabilities
     seen_ids = set()
@@ -314,6 +419,7 @@ def scan(package: str, report: str = typer.Option(None, help="Export report file
 
     status = risk_level(score)
 
+    # ---------------- TABLE ----------------
     table = Table(title=f"OS³ Security Report — {package}")
     table.add_column("Metric", style="cyan")
     table.add_column("Value", style="magenta")
@@ -330,6 +436,7 @@ def scan(package: str, report: str = typer.Option(None, help="Export report file
 
     console.print(table)
 
+    # ---------------- BREAKDOWN ----------------
     console.print("\n[bold yellow]Security Score Breakdown[/bold yellow]\n")
 
     breakdown = Table()
@@ -345,6 +452,7 @@ def scan(package: str, report: str = typer.Option(None, help="Export report file
 
     console.print(breakdown)
 
+    # ---------------- ATTACK PATHS ----------------
     if attack_paths:
 
         console.print("\n[bold red]Potential Attack Paths[/bold red]\n")
@@ -355,6 +463,7 @@ def scan(package: str, report: str = typer.Option(None, help="Export report file
     else:
         console.print("\n[green]No attack paths detected.[/green]")
 
+    # ---------------- VULNERABILITIES ----------------
     if vulnerabilities:
 
         console.print("\n[bold yellow]Top Vulnerabilities[/bold yellow]\n")
@@ -373,6 +482,7 @@ def scan(package: str, report: str = typer.Option(None, help="Export report file
                 )
             )
 
+    # ---------------- REPORT ----------------
     if report:
 
         generate_report(
@@ -415,6 +525,31 @@ def graph(package: str):
     console.print(tree)
 
 
+@app.command()
+def check_python_installed():
+    try:
+        subprocess.run(
+            ["python", "--version"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            check=True
+        )
+    except:
+        console.print("\n[bold red]❌ Python is not installed[/bold red]")
+        console.print("[yellow]👉 Please install Python 3.10+ from https://python.org[/yellow]\n")
+        raise typer.Exit()
+
+def is_suspicious_package(package: str):
+    suspicious_keywords = ["test", "example", "demo", "fake"]
+
+    if package.lower() in suspicious_keywords:
+        return True
+
+    if len(package) < 2:
+        return True
+
+    return False
+
 # ------------------------------------------------
 # INSTALL CHECK
 # ------------------------------------------------
@@ -437,6 +572,8 @@ def check_install(package: str):
 
     else:
         console.print("\n[green]Package appears safe[/green]")
+
+
 
 
 if __name__ == "__main__":
