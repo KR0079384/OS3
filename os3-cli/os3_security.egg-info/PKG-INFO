@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: os3-security
-Version: 0.1.5
+Version: 0.2.0
 Summary: OS3 Open Source Supply Chain Security Scanner
 Author: OS3 Team
 Requires-Python: >=3.8
