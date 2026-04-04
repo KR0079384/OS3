@@ -3,6 +3,7 @@ pyproject.toml
 setup.py
 os3/__init__.py
 os3/cli.py
+os3/scan.py
 os3/backend/attack_path_test.py
 os3/backend/main.py
 os3/backend/requirements.txt
@@ -17,6 +18,8 @@ os3/backend/services/dependency_graph.py
 os3/backend/services/dependency_service.py
 os3/backend/services/npm_service.py
 os3/backend/services/osv_service.py
+os3/engine/__init__.py
+os3/engine/osv.py
 os3_security.egg-info/PKG-INFO
 os3_security.egg-info/SOURCES.txt
 os3_security.egg-info/dependency_links.txt

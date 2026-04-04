@@ -2,174 +2,35 @@ import typer
 import requests
 import json
 import time
-import sys
 import subprocess
-import os
-from pathlib import Path
-
-BASE_DIR = Path(__file__).resolve().parent
-BACKEND_DIR = BASE_DIR / "backend"
-
-VENV_DIR = BACKEND_DIR / "venv"
-
-if os.name == "nt":
-    PYTHON_PATH = VENV_DIR / "Scripts" / "python.exe"
-else:
-    PYTHON_PATH = VENV_DIR / "bin" / "python"
-
 
 from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
 from rich.tree import Tree
 
+from os3.scan import run_package_scan
+from os3.engine.osv import count_severity
+
 app = typer.Typer()
 console = Console()
 
-API_URL = "http://127.0.0.1:8000/api/scan-package"
-
 
 # ------------------------------------------------
-# BACKEND AUTO START
+# LOCAL SCAN (no backend)
 # ------------------------------------------------
 
 
-def ensure_backend_running():
-
-    # ✅ Check if Python is installed
-    try:
-        subprocess.run(
-            ["python", "--version"],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            check=True
-        )
-    except:
-        console.print("\n[bold red]❌ Python is not installed[/bold red]")
-        console.print("[yellow]👉 Please install Python 3.10+ from https://python.org[/yellow]\n")
-        raise typer.Exit()
-
-    # ✅ Check if backend already running
-    try:
-        requests.get("http://127.0.0.1:8000/docs", timeout=2)
-        return
-    except:
-        console.print("[yellow]Starting OS³ backend server...[/yellow]")
-
-    backend_dir = str(BACKEND_DIR)
-    venv_dir = str(VENV_DIR)
-
-    # OS-specific python path
-    if os.name == "nt":
-        venv_python = os.path.join(venv_dir, "Scripts", "python.exe")
-    else:
-        venv_python = os.path.join(venv_dir, "bin", "python")
-
-    # -------------------------
-    # STEP 1 — Create venv
-    # -------------------------
-    if not os.path.exists(venv_dir):
-        console.print("[cyan]Creating backend virtual environment...[/cyan]")
-
-        subprocess.run(
-            [sys.executable, "-m", "venv", "venv"],
-            cwd=backend_dir,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            check=True
-        )
-
-    # -------------------------
-    # STEP 2 — Install deps
-    # -------------------------
-    if not os.path.exists(venv_python):
-        console.print("[red]Backend Python not found[/red]")
-        raise typer.Exit()
-
-    flag_file = os.path.join(venv_dir, ".installed")
-
-    if not os.path.exists(flag_file):
-        console.print("[cyan]Installing backend dependencies...[/cyan]")
-
-        subprocess.run(
-            [venv_python, "-m", "pip", "install", "-r", "requirements.txt"],
-            cwd=backend_dir,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            check=True
-        )
-
-        with open(flag_file, "w") as f:
-            f.write("done")
-
-    # -------------------------
-    # STEP 3 — Start backend
-    # -------------------------
-    console.print("[cyan]Launching backend server...[/cyan]")
-
-    subprocess.Popen(
-        [
-            venv_python,
-            "-m",
-            "uvicorn",
-            "main:app",
-            "--port",
-            "8000"
-        ],
-        cwd=backend_dir,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL
-    )
-
-    # -------------------------
-    # STEP 4 — Wait for server
-    # -------------------------
-    for _ in range(15):
-        try:
-            requests.get("http://127.0.0.1:8000/docs", timeout=2)
-            console.print("[green]Backend started successfully[/green]")
-            return
-        except:
-            time.sleep(1)
-
-    console.print("[red]Backend failed to start[/red]")
-    raise typer.Exit()
-
-# ------------------------------------------------
-# API CALL
-# ------------------------------------------------
-
-def fetch_scan(package: str):
-
-    ensure_backend_running()
-
-    # 🔥 NEW — suspicious warning
+def load_scan_result(package: str):
     if is_suspicious_package(package):
         console.print("\n[yellow]⚠ Warning: This package looks suspicious or invalid[/yellow]\n")
 
-    try:
-        response = requests.post(
-            API_URL,
-            json={"package_name": package},
-            timeout=60
-        )
-
-    except requests.exceptions.RequestException as e:
-        console.print(f"[bold red]API connection error:[/bold red] {e}")
+    data = run_package_scan(package)
+    if data.get("error") == "package_not_found":
+        console.print(f"[bold red]❌ {data.get('message', 'Package not found')}[/bold red]")
         raise typer.Exit()
-
-    # 🔥 IMPROVED ERROR
-    if response.status_code != 200:
-        console.print("[bold red]❌ Package not found or invalid[/bold red]")
-        raise typer.Exit()
-
-    data = response.json()
-
-    if "error" in data:
-        console.print(f"[bold red]❌ {data.get('message')}[/bold red]")
-        raise typer.Exit()
-
     return data
+
 
 def fetch_npm_info(package: str):
     try:
@@ -186,24 +47,26 @@ def fetch_npm_info(package: str):
         return {
             "latest_version": latest_version,
             "version_count": len(versions),
-            "time": data.get("time", {})
+            "time": data.get("time", {}),
         }
 
-    except:
+    except Exception:
         return None
+
 
 def fetch_downloads(package: str):
     try:
         res = requests.get(
             f"https://api.npmjs.org/downloads/point/last-week/{package}",
-            timeout=5
+            timeout=5,
         )
         if res.status_code == 200:
             return res.json().get("downloads", 0)
-    except:
+    except Exception:
         return 0
 
     return 0
+
 
 def evaluate_package(package: str):
 
@@ -215,17 +78,14 @@ def evaluate_package(package: str):
 
     score = 100
 
-    # Low downloads → suspicious
     if downloads < 100:
         score -= 40
     elif downloads < 1000:
         score -= 20
 
-    # Very few versions → immature
     if npm_info["version_count"] < 5:
         score -= 20
 
-    # Final verdict
     if score < 40:
         return "🚨 HIGH RISK (Possible fake package)", score
     elif score < 70:
@@ -238,21 +98,44 @@ def evaluate_package(package: str):
 # SECURITY SCORE MODEL
 # ------------------------------------------------
 
+
 def calculate_score(dependencies, critical, high, medium, low, attack_paths):
+    total = critical + high + medium + low
 
-    vulnerability_penalty = (
-        critical * 10 +
-        high * 7 +
-        medium * 4 +
-        low * 1
-    )
+    if total > 0:
+        critical_ratio = critical / total
+        high_ratio = high / total
+        medium_ratio = medium / total
+        low_ratio = low / total
 
-    attack_penalty = len(attack_paths) * 3
-    dependency_penalty = int(len(dependencies) / 8)
+        vuln_penalty = (
+            critical_ratio * 40
+            + high_ratio * 25
+            + medium_ratio * 15
+            + low_ratio * 5
+        )
+    else:
+        vuln_penalty = 0
 
-    score = 100 - (vulnerability_penalty + attack_penalty + dependency_penalty)
+    dep_count = len(dependencies)
 
-    return max(0, score), vulnerability_penalty, attack_penalty, dependency_penalty
+    if dep_count > 50:
+        dep_penalty = 10
+    elif dep_count > 20:
+        dep_penalty = 5
+    else:
+        dep_penalty = 0
+
+    attack_penalty = min(len(attack_paths) * 2, 10)
+
+    score = 100 - vuln_penalty - dep_penalty - attack_penalty
+
+    trust_boost = 5 if dep_count > 20 else 0
+    score += trust_boost
+
+    score = min(max(score, 20), 100)
+
+    return int(round(score)), vuln_penalty, attack_penalty, dep_penalty, trust_boost
 
 
 def risk_level(score):
@@ -271,6 +154,7 @@ def risk_level(score):
 # REPORT GENERATOR
 # ------------------------------------------------
 
+
 def generate_report(
     filename,
     package,
@@ -281,7 +165,7 @@ def generate_report(
     low,
     attack_paths,
     score,
-    status
+    status,
 ):
 
     report_data = {
@@ -291,11 +175,11 @@ def generate_report(
             "critical": critical,
             "high": high,
             "medium": medium,
-            "low": low
+            "low": low,
         },
         "attack_paths": attack_paths,
         "security_score": score,
-        "risk_level": status
+        "risk_level": status,
     }
 
     if filename.endswith(".json"):
@@ -347,6 +231,7 @@ Avoid vulnerable transitive dependencies
 # MAIN SCAN COMMAND
 # ------------------------------------------------
 
+
 @app.command()
 def scan(package: str, report: str = typer.Option(None, help="Export report file")):
 
@@ -356,103 +241,83 @@ def scan(package: str, report: str = typer.Option(None, help="Export report file
 
     console.print(f"\n[bold cyan]Scanning package:[/bold cyan] {package}\n")
 
-    # 🔥 NEW — NPM TRUST FIRST (better UX)
     status_msg, trust_score = evaluate_package(package)
 
-    console.print(Panel(
-        f"{status_msg}\nTrust Score: {trust_score}/100",
-        title="NPM Trust Analysis",
-        border_style="cyan"
-    ))
+    console.print(
+        Panel(
+            f"{status_msg}\nTrust Score: {trust_score}/100",
+            title="NPM Trust Analysis",
+            border_style="cyan",
+        )
+    )
 
-    # 🚨 Suspicious names warning
     if package.lower() in ["test", "example", "demo"]:
         console.print("[yellow]⚠ This package name is commonly used and may be unsafe[/yellow]\n")
 
-    data = fetch_scan(package)
+    data = load_scan_result(package)
 
     dependencies = data.get("dependencies", [])
     vulnerabilities = data.get("vulnerability_details", [])
     attack_paths = data.get("attack_paths", [])
 
-    # 🚨 Low-quality package warning
     if len(dependencies) < 5:
         console.print("[yellow]⚠ Low dependency ecosystem — possible low-quality package[/yellow]\n")
 
-    # remove duplicate vulnerabilities
-    seen_ids = set()
-    unique_vulns = []
+    sev = count_severity(vulnerabilities)
+    critical = sev["CRITICAL"]
+    high = sev["HIGH"]
+    medium = sev["MEDIUM"]
+    low = sev["LOW"]
+    total_vulns = len(vulnerabilities)
 
-    for v in vulnerabilities:
-        vid = v.get("id") or v.get("summary")
-        if vid not in seen_ids:
-            seen_ids.add(vid)
-            unique_vulns.append(v)
-
-    vulnerabilities = unique_vulns
-
-    critical = high = medium = low = 0
-
-    for vuln in vulnerabilities:
-
-        severity = vuln.get("database_specific", {}).get("severity", "").upper()
-
-        if severity == "CRITICAL":
-            critical += 1
-        elif severity == "HIGH":
-            high += 1
-        elif severity in ["MEDIUM", "MODERATE"]:
-            medium += 1
-        elif severity == "LOW":
-            low += 1
-
-    total_vulns = critical + high + medium + low
-
-    score, vulnerability_penalty, attack_penalty, dependency_penalty = calculate_score(
+    score, vuln_penalty, attack_penalty, dep_penalty, trust_boost = calculate_score(
         dependencies,
         critical,
         high,
         medium,
         low,
-        attack_paths
+        attack_paths,
     )
 
     status = risk_level(score)
 
-    # ---------------- TABLE ----------------
     table = Table(title=f"OS³ Security Report — {package}")
     table.add_column("Metric", style="cyan")
     table.add_column("Value", style="magenta")
 
     table.add_row("Dependencies Found", str(len(dependencies)))
     table.add_row("Total Vulnerabilities", str(total_vulns))
-    table.add_row("Critical", str(critical))
-    table.add_row("High", str(high))
-    table.add_row("Medium", str(medium))
-    table.add_row("Low", str(low))
-    table.add_row("Attack Paths", str(len(attack_paths)))
+    table.add_row("Critical / High / Med / Low", f"{critical} / {high} / {medium} / {low}")
+    table.add_row("Attack Paths (count)", str(len(attack_paths)))
     table.add_row("Security Score", f"{score}/100")
     table.add_row("Risk Level", status)
 
     console.print(table)
 
-    # ---------------- BREAKDOWN ----------------
     console.print("\n[bold yellow]Security Score Breakdown[/bold yellow]\n")
 
-    breakdown = Table()
-    breakdown.add_column("Factor")
-    breakdown.add_column("Penalty")
+    breakdown = Table(show_header=True, header_style="bold")
+    breakdown.add_column("Component", style="cyan", no_wrap=True)
+    breakdown.add_column("Effect", style="magenta")
 
-    breakdown.add_row("Critical Vulnerabilities", f"-{critical*10}")
-    breakdown.add_row("High Vulnerabilities", f"-{high*7}")
-    breakdown.add_row("Medium Vulnerabilities", f"-{medium*4}")
-    breakdown.add_row("Low Vulnerabilities", f"-{low*1}")
-    breakdown.add_row("Attack Paths", f"-{attack_penalty}")
-    breakdown.add_row("Dependency Complexity", f"-{dependency_penalty}")
+    breakdown.add_row("Total vulnerabilities", str(total_vulns))
+    breakdown.add_row(
+        "Severity breakdown (C / H / M / L)",
+        f"{critical} / {high} / {medium} / {low}",
+    )
+    breakdown.add_row(
+        "Vulnerability penalty (ratio-based)",
+        f"-{vuln_penalty:.1f}",
+    )
+    breakdown.add_row("Dependency penalty (capped)", f"-{dep_penalty}")
+    breakdown.add_row("Attack path penalty (capped)", f"-{attack_penalty}")
+    if trust_boost > 0:
+        breakdown.add_row("Trust boost (large ecosystem)", f"+{trust_boost}")
+    else:
+        breakdown.add_row("Trust boost (large ecosystem)", "—")
 
     console.print(breakdown)
 
-    # ---------------- ATTACK PATHS ----------------
     if attack_paths:
 
         console.print("\n[bold red]Potential Attack Paths[/bold red]\n")
@@ -463,26 +328,22 @@ def scan(package: str, report: str = typer.Option(None, help="Export report file
     else:
         console.print("\n[green]No attack paths detected.[/green]")
 
-    # ---------------- VULNERABILITIES ----------------
     if vulnerabilities:
 
-        console.print("\n[bold yellow]Top Vulnerabilities[/bold yellow]\n")
+        console.print("\n[bold yellow]Top 3 vulnerabilities[/bold yellow]\n")
 
-        for vuln in vulnerabilities[:5]:
-
+        for vuln in vulnerabilities[:3]:
+            vid = vuln.get("id", "unknown")
             summary = vuln.get("summary", "No description")
-            severity = vuln.get("database_specific", {}).get("severity", "UNKNOWN")
-            pkg = vuln.get("package", "dependency")
-
+            sev_label = vuln.get("severity", "LOW")
             console.print(
                 Panel(
                     summary,
-                    title=f"{pkg} | Severity: {severity}",
-                    expand=False
+                    title=f"{vid} | {sev_label}",
+                    expand=False,
                 )
             )
 
-    # ---------------- REPORT ----------------
     if report:
 
         generate_report(
@@ -495,7 +356,7 @@ def scan(package: str, report: str = typer.Option(None, help="Export report file
             low,
             attack_paths,
             score,
-            status
+            status,
         )
 
         console.print(f"\n[bold green]Report saved to:[/bold green] {report}")
@@ -508,12 +369,13 @@ def scan(package: str, report: str = typer.Option(None, help="Export report file
 # GRAPH COMMAND
 # ------------------------------------------------
 
+
 @app.command()
 def graph(package: str):
 
     console.print(f"\n[bold cyan]Dependency Graph:[/bold cyan] {package}\n")
 
-    data = fetch_scan(package)
+    data = load_scan_result(package)
 
     dependencies = data.get("dependencies", [])
 
@@ -532,12 +394,13 @@ def check_python_installed():
             ["python", "--version"],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
-            check=True
+            check=True,
         )
-    except:
+    except Exception:
         console.print("\n[bold red]❌ Python is not installed[/bold red]")
         console.print("[yellow]👉 Please install Python 3.10+ from https://python.org[/yellow]\n")
         raise typer.Exit()
+
 
 def is_suspicious_package(package: str):
     suspicious_keywords = ["test", "example", "demo", "fake"]
@@ -550,18 +413,31 @@ def is_suspicious_package(package: str):
 
     return False
 
+
 # ------------------------------------------------
 # INSTALL CHECK
 # ------------------------------------------------
+
 
 @app.command()
 def check_install(package: str):
 
     console.print(f"\n[bold cyan]Checking package before install:[/bold cyan] {package}")
 
-    data = fetch_scan(package)
+    data = load_scan_result(package)
 
-    score = data.get("security_score", 0)
+    vulns = data.get("vulnerability_details", [])
+    sev = count_severity(vulns)
+    deps = data.get("dependencies", [])
+    paths = data.get("attack_paths", [])
+    score, _, _, _, _ = calculate_score(
+        deps,
+        sev["CRITICAL"],
+        sev["HIGH"],
+        sev["MEDIUM"],
+        sev["LOW"],
+        paths,
+    )
 
     if score < 40:
         console.print("\n[bold red]⚠ Security Warning[/bold red]")
@@ -572,8 +448,6 @@ def check_install(package: str):
 
     else:
         console.print("\n[green]Package appears safe[/green]")
-
-
 
 
 if __name__ == "__main__":
