@@ -42,6 +42,7 @@ interface Severity {
 
 const Dashboard = () => {
 
+const Dashboard = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -207,7 +208,6 @@ const Dashboard = () => {
                           filter: "drop-shadow(0px 0px 10px rgba(56,189,248,0.7))"
                         }}
                       />
-
                     </svg>
 
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
@@ -222,11 +222,8 @@ const Dashboard = () => {
                       <span className="text-xs text-foreground/50 tracking-widest">
                         SECURITY SCORE
                       </span>
-
                     </div>
-
                   </div>
-
                 </CardContent>
 
               </Card>
@@ -267,9 +264,7 @@ const Dashboard = () => {
                   </Card>
 
                 ))}
-
               </div>
-
             </div>
 
             {/* SEVERITY CHART */}
@@ -405,8 +400,8 @@ const Dashboard = () => {
                   ))}
 
                 </CardContent>
-
               </Card>
+            )}
 
             )}
 
@@ -419,21 +414,15 @@ const Dashboard = () => {
 
                 <Network className="w-4 h-4" />
                 View Dependency Graph
-
               </Button>
-
             </div>
-
           </motion.div>
-
         </div>
-
       </div>
 
     </PageTransition>
 
   );
-
 };
 
 export default Dashboard;
