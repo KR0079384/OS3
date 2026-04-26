@@ -30,17 +30,17 @@ const Scoreboard = () => {
 
   return (
     <div className="p-6">
-      {/* Header */}
+      {/* Title */}
       <h1 className="text-3xl font-bold text-white mb-6 flex items-center gap-2">
         🏆 Live Scoreboard
       </h1>
 
-      {/* Table Container */}
-      <div className="bg-white/5 backdrop-blur-lg rounded-2xl shadow-lg border border-white/10 overflow-hidden">
-        <table className="w-full">
-          {/* Table Head */}
+      {/* Container */}
+      <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl overflow-hidden">
+        <table className="w-full text-sm">
+          {/* Header */}
           <thead>
-            <tr className="bg-white/10 text-gray-300 text-sm uppercase tracking-wider">
+            <tr className="bg-white/10 text-gray-300 uppercase tracking-wide text-xs">
               <th className="p-4 text-left">Team</th>
               <th className="p-4 text-center">Score</th>
               <th className="p-4 text-center">Category</th>
@@ -48,21 +48,21 @@ const Scoreboard = () => {
             </tr>
           </thead>
 
-          {/* Table Body */}
+          {/* Body */}
           <tbody>
             {scores.map((s, index) => (
               <tr
                 key={s.id}
-                className={`border-t border-white/10 text-gray-200 transition duration-200 hover:bg-white/10 ${
+                className={`border-t border-white/10 text-gray-200 hover:bg-white/10 transition ${
                   index === 0 ? "bg-green-500/10" : ""
                 }`}
               >
                 <td className="p-4 font-semibold">{s.team}</td>
-                <td className="p-4 text-center font-bold text-lg text-green-400">
+                <td className="p-4 text-center font-bold text-green-400 text-lg">
                   {s.score}
                 </td>
                 <td className="p-4 text-center">{s.category}</td>
-                <td className="p-4 text-center text-sm text-gray-400">
+                <td className="p-4 text-center text-gray-400 text-sm">
                   {s.judgedBy}
                 </td>
               </tr>

@@ -5,10 +5,11 @@ import {
   CheckCircle,
   XCircle,
   Activity,
-  Network
+  Network,
 } from "lucide-react";
 
 import cyberBgVideo from "@/assets/cyber-bg-video.mp4";
+import Scoreboard from "../components/Scoreboard";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -22,7 +23,7 @@ import {
   YAxis,
   Tooltip,
   CartesianGrid,
-  Cell
+  Cell,
 } from "recharts";
 
 import PageTransition from "@/components/PageTransition";
@@ -41,27 +42,22 @@ interface Severity {
 }
 
 const Dashboard = () => {
-
-const Dashboard = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
   const dependencies = location.state?.dependencies ?? 0;
   const vulnerabilities = location.state?.vulnerabilities ?? 0;
 
-  const graph: GraphData =
-    location.state?.graph ?? { nodes: [], edges: [] };
+  const graph: GraphData = location.state?.graph ?? { nodes: [], edges: [] };
 
-  const attackPaths: string[][] =
-    location.state?.attackPaths ?? [];
+  const attackPaths: string[][] = location.state?.attackPaths ?? [];
 
-  const severity: Severity =
-    location.state?.severity ?? {
-      critical: 0,
-      high: 0,
-      medium: 0,
-      low: 0
-    };
+  const severity: Severity = location.state?.severity ?? {
+    critical: 0,
+    high: 0,
+    medium: 0,
+    low: 0,
+  };
 
   /* -----------------------------
      SCORING ENGINE
@@ -78,7 +74,7 @@ const Dashboard = () => {
 
   const securityScore = Math.max(
     0,
-    100 - vulnerabilityPenalty - attackPenalty - dependencyPenalty
+    100 - vulnerabilityPenalty - attackPenalty - dependencyPenalty,
   );
 
   let status = "Secure";
@@ -104,14 +100,14 @@ const Dashboard = () => {
     { label: "Total Dependencies", value: dependencies, icon: Package },
     { label: "Safe Packages", value: safePackages, icon: CheckCircle },
     { label: "Vulnerable", value: vulnerabilities, icon: AlertTriangle },
-    { label: "High Risk", value: highRisk, icon: XCircle }
+    { label: "High Risk", value: highRisk, icon: XCircle },
   ];
 
   const severityData = [
     { name: "Critical", count: severity.critical, fill: "#ff3b3b" },
     { name: "High", count: severity.high, fill: "#ff7a18" },
     { name: "Medium", count: severity.medium, fill: "#facc15" },
-    { name: "Low", count: severity.low, fill: "#22d3ee" }
+    { name: "Low", count: severity.low, fill: "#22d3ee" },
   ];
 
   const circumference = 2 * Math.PI * 80;
@@ -119,16 +115,13 @@ const Dashboard = () => {
 
   const openGraph = () => {
     navigate("/graph", {
-      state: { graph, attackPaths }
+      state: { graph, attackPaths },
     });
   };
 
   return (
-
     <PageTransition>
-
       <div className="min-h-screen pt-24 pb-16 relative overflow-hidden">
-
         {/* Background */}
 
         <video
@@ -144,22 +137,18 @@ const Dashboard = () => {
         <div className="absolute inset-0 cyber-grid z-[2]" />
 
         <div className="container max-w-7xl mx-auto relative z-[3]">
-
           <motion.div
             initial={{ opacity: 0, y: 25 }}
             animate={{ opacity: 1, y: 0 }}
           >
-
             {/* HEADER */}
 
             <div className="flex items-center gap-3 mb-2">
-
               <Activity className="w-6 h-6 text-primary" />
 
               <h1 className="text-3xl font-bold">
                 Security Score <span className="text-primary">Dashboard</span>
               </h1>
-
             </div>
 
             <Badge className="mb-10 bg-primary/10 border-primary/20 text-primary">
@@ -169,20 +158,15 @@ const Dashboard = () => {
             {/* HERO SECTION */}
 
             <div className="grid lg:grid-cols-3 gap-6 mb-12">
-
               {/* SCORE PANEL */}
 
               <Card className="bg-transparent border border-white/10 shadow-[0_0_35px_rgba(56,189,248,0.18)]">
-
                 <CardContent className="p-10 flex justify-center">
-
                   <div className="relative w-56 h-56">
-
                     <svg
                       className="w-full h-full -rotate-90"
                       viewBox="0 0 200 200"
                     >
-
                       <circle
                         cx="100"
                         cy="100"
@@ -205,13 +189,13 @@ const Dashboard = () => {
                         animate={{ strokeDashoffset: offset }}
                         transition={{ duration: 1.6 }}
                         style={{
-                          filter: "drop-shadow(0px 0px 10px rgba(56,189,248,0.7))"
+                          filter:
+                            "drop-shadow(0px 0px 10px rgba(56,189,248,0.7))",
                         }}
                       />
                     </svg>
 
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-
                       <span
                         className="text-6xl font-black font-mono"
                         style={{ color: scoreColor }}
@@ -225,44 +209,30 @@ const Dashboard = () => {
                     </div>
                   </div>
                 </CardContent>
-
               </Card>
 
               {/* STAT CARDS */}
 
               <div className="lg:col-span-2 grid sm:grid-cols-2 gap-5">
-
                 {stats.map((s) => (
-
                   <Card
                     key={s.label}
                     className="bg-transparent border border-white/10 hover:border-primary/40 shadow-[0_0_30px_rgba(56,189,248,0.12)] hover:shadow-[0_0_45px_rgba(56,189,248,0.25)] transition"
                   >
-
                     <CardContent className="p-6 flex items-center gap-4">
-
                       <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-
                         <s.icon className="w-5 h-5 text-primary" />
-
                       </div>
 
                       <div>
-
                         <p className="text-2xl font-black font-mono">
                           {s.value}
                         </p>
 
-                        <p className="text-xs text-foreground/60">
-                          {s.label}
-                        </p>
-
+                        <p className="text-xs text-foreground/60">{s.label}</p>
                       </div>
-
                     </CardContent>
-
                   </Card>
-
                 ))}
               </div>
             </div>
@@ -270,17 +240,13 @@ const Dashboard = () => {
             {/* SEVERITY CHART */}
 
             <Card className="mb-10 bg-transparent border border-white/10 shadow-[0_0_35px_rgba(56,189,248,0.12)]">
-
               <CardHeader>
                 <CardTitle>Vulnerability Severity</CardTitle>
               </CardHeader>
 
               <CardContent>
-
                 <ResponsiveContainer width="100%" height={260}>
-
                   <BarChart data={severityData} barSize={36}>
-
                     <CartesianGrid
                       strokeDasharray="3 6"
                       stroke="rgba(255,255,255,0.05)"
@@ -293,56 +259,47 @@ const Dashboard = () => {
                       tickLine={false}
                     />
 
-                    <YAxis
-                      stroke="#9ca3af"
-                      axisLine={false}
-                      tickLine={false}
-                    />
+                    <YAxis stroke="#9ca3af" axisLine={false} tickLine={false} />
 
                     <Tooltip
                       cursor={{ fill: "rgba(255,255,255,0.03)" }}
                       contentStyle={{
                         background: "#020617",
                         border: "1px solid rgba(56,189,248,0.4)",
-                        borderRadius: "10px"
+                        borderRadius: "10px",
                       }}
                     />
 
                     <Bar dataKey="count" radius={[12, 12, 0, 0]}>
-
                       {severityData.map((entry, index) => (
                         <Cell
                           key={index}
                           fill={entry.fill}
                           style={{
-                            filter: "drop-shadow(0px 0px 6px rgba(255,255,255,0.25))"
+                            filter:
+                              "drop-shadow(0px 0px 6px rgba(255,255,255,0.25))",
                           }}
                         />
                       ))}
-
                     </Bar>
-
                   </BarChart>
-
                 </ResponsiveContainer>
-
               </CardContent>
-
             </Card>
 
             {/* SCORE BREAKDOWN */}
 
             <Card className="mb-10 bg-transparent border border-white/10 shadow-[0_0_30px_rgba(56,189,248,0.1)]">
-
               <CardHeader>
                 <CardTitle>Security Score Breakdown</CardTitle>
               </CardHeader>
 
               <CardContent className="space-y-3 text-sm font-mono">
-
                 <div className="flex justify-between">
                   <span>Critical Vulnerabilities</span>
-                  <span className="text-red-400">-{severity.critical * 15}</span>
+                  <span className="text-red-400">
+                    -{severity.critical * 15}
+                  </span>
                 </div>
 
                 <div className="flex justify-between">
@@ -352,7 +309,9 @@ const Dashboard = () => {
 
                 <div className="flex justify-between">
                   <span>Medium Vulnerabilities</span>
-                  <span className="text-yellow-400">-{severity.medium * 5}</span>
+                  <span className="text-yellow-400">
+                    -{severity.medium * 5}
+                  </span>
                 </div>
 
                 <div className="flex justify-between">
@@ -369,17 +328,13 @@ const Dashboard = () => {
                   <span>Dependency Complexity</span>
                   <span className="text-orange-400">-{dependencyPenalty}</span>
                 </div>
-
               </CardContent>
-
             </Card>
 
             {/* ATTACK PATHS */}
 
             {attackPaths.length > 0 && (
-
               <Card className="mb-10 bg-transparent border border-red-500/40 shadow-[0_0_35px_rgba(255,0,0,0.25)]">
-
                 <CardHeader>
                   <CardTitle className="text-red-400">
                     ⚠ Supply Chain Attack Paths
@@ -387,31 +342,25 @@ const Dashboard = () => {
                 </CardHeader>
 
                 <CardContent>
-
                   {attackPaths.map((path, index) => (
-
                     <div
                       key={index}
                       className="font-mono text-sm text-red-300 mb-2"
                     >
                       {path.join(" → ")}
                     </div>
-
                   ))}
-
                 </CardContent>
               </Card>
             )}
 
-            )}
+            {/* SCOREBOARD */}
+            <div className="mb-10 rounded-xl overflow-hidden border border-white/10 bg-black/40 shadow-[0_0_30px_rgba(56,189,248,0.1)]">
+              <Scoreboard />
+            </div>
 
             <div className="flex justify-center">
-
-              <Button
-                onClick={openGraph}
-                className="gap-2 px-8 py-3 text-base"
-              >
-
+              <Button onClick={openGraph} className="gap-2 px-8 py-3 text-base">
                 <Network className="w-4 h-4" />
                 View Dependency Graph
               </Button>
@@ -419,9 +368,7 @@ const Dashboard = () => {
           </motion.div>
         </div>
       </div>
-
     </PageTransition>
-
   );
 };
 
