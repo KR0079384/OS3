@@ -1,0 +1,6 @@
+recursive-include os3/backend *.py
+include os3/backend/requirements.txt
+
+prune os3/backend/venv
+global-exclude __pycache__
+global-exclude *.pyc
