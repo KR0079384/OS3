@@ -12,24 +12,25 @@ firebase_admin.initialize_app(cred)
 db = firestore.client()
 
 def add_score():
-    print("\n=== OS3 Scoring CLI ===\n")
+    
+        print("\n=== OS3 Scoring CLI ===\n")
 
-    team = input("Enter Team Name: ")
-    score = int(input("Enter Score: "))
-    category = input("Enter Category: ")
-    judge = input("Enter Judge Email: ")
+        package_name = input("Enter Team Name: ")
+        security_score = int(input("Enter Score: "))
+        risk_level = input("Enter CategoryAnalysed")
+        analysis_score = input("Enter Judge Email: ")
 
-    data = {
-        "team": team,
-        "score": score,
-        "category": category,
-        "judgedBy": judge,
-        "timestamp": datetime.utcnow()
-    }
+        data = {
+            "package_name": package_name,
+            "security_score": security_score,
+            "risk_level": risk_level,
+            "AnalysedBy": analysis_score,
+            "timestamp": datetime.utcnow()
+        }
 
-    db.collection("scores").add(data)
+        db.collection("scores").add(data)
 
-    print("\n✅ Score added successfully!\n")
+        print("\n✅ Score added successfully!\n")
 
 
 if __name__ == "__main__":

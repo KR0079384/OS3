@@ -4,17 +4,17 @@ import { collection, onSnapshot, query, orderBy } from "firebase/firestore";
 
 interface Score {
   id: string;
-  team: string;
-  score: number;
-  category: string;
-  judgedBy: string;
+  package_name: string;
+  security_score: number;
+  risk_level: string;
+  AnalysedBy: string;
 }
 
 const Scoreboard = () => {
   const [scores, setScores] = useState<Score[]>([]);
 
   useEffect(() => {
-    const q = query(collection(db, "scores"), orderBy("score", "desc"));
+    const q = query(collection(db, "scores"), orderBy("security_score", "desc"));
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data: Score[] = snapshot.docs.map((doc) => ({
@@ -41,10 +41,10 @@ const Scoreboard = () => {
           {/* Header */}
           <thead>
             <tr className="bg-white/10 text-gray-300 uppercase tracking-wide text-xs">
-              <th className="p-4 text-left">Team</th>
-              <th className="p-4 text-center">Score</th>
-              <th className="p-4 text-center">Category</th>
-              <th className="p-4 text-center">Judge</th>
+              <th className="p-4 text-left">Package Name</th>
+              <th className="p-4 text-center">Security Score</th>
+              <th className="p-4 text-center">Risk Level</th>
+              <th className="p-4 text-center">Analysed By</th>
             </tr>
           </thead>
 
@@ -57,13 +57,13 @@ const Scoreboard = () => {
                   index === 0 ? "bg-green-500/10" : ""
                 }`}
               >
-                <td className="p-4 font-semibold">{s.team}</td>
+                <td className="p-4 font-semibold">{s.package_name}</td>
                 <td className="p-4 text-center font-bold text-green-400 text-lg">
-                  {s.score}
+                  {s.security_score}
                 </td>
-                <td className="p-4 text-center">{s.category}</td>
+                <td className="p-4 text-center">{s.risk_level}</td>
                 <td className="p-4 text-center text-gray-400 text-sm">
-                  {s.judgedBy}
+                  {s.AnalysedBy}
                 </td>
               </tr>
             ))}
