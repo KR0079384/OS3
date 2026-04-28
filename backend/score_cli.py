@@ -15,10 +15,10 @@ def add_score():
     
         print("\n=== OS3 Scoring CLI ===\n")
 
-        package_name = input("Enter Team Name: ")
-        security_score = int(input("Enter Score: "))
-        risk_level = input("Enter CategoryAnalysed")
-        analysis_score = input("Enter Judge Email: ")
+        package_name = input("Enter Package Name: ")
+        security_score = int(input("Enter Security Score: "))
+        risk_level = input("Enter Risk Level: ")
+        analysis_score = input("Enter Analysed By: ")
 
         data = {
             "package_name": package_name,
