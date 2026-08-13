@@ -32,7 +32,7 @@ OS3 provides **pre-installation security analysis** through:
 
 ## 🌟 Key Features
 
-### 💻 CLI Tool (Global via PyPI)
+### 💻 CLI Tool
 - Install with a single command
 - Works directly in developer workflow
 - No setup required
@@ -41,11 +41,13 @@ OS3 provides **pre-installation security analysis** through:
 pip install os3-security
 ```
 
+*Note: CLI deployment to PyPI is planned for future release.*
+
 ## 🌐 Web Application
 
-OS³ also provides a **web-based interface** for interactive security analysis.
+OS³ provides a **web-based interface** for interactive security analysis.
 
-🔗 Live App: https://os3org.web.app  
+🔗 Live Demo: https://os3org.web.app  
 
 ### 🔍 Features
 
@@ -87,7 +89,6 @@ Get safer alternatives
 
 ✨ Features Implemented
 ✅ CLI-based package scanning
-✅ PyPI deployment (os3-security)
 ✅ Web-based package scanning interface
 ✅ Real-time package analysis
 ✅ Dependency graph visualization
@@ -96,5 +97,184 @@ Get safer alternatives
 ✅ AI chatbot for assistance
 ✅ Firebase real-time backend
 ✅ Live dashboard for insights
+
+---
+
+## 🏗 Architecture
+
+OS3 uses a modern web application architecture:
+
+```
+Frontend (React + TypeScript)
+         ↓
+FastAPI Backend
+         ↓
+RAG Pipeline (FAISS)
+         ↓
+Ollama LLaMA3 (AI Assistant)
+         ↓
+Firebase (Real-time Database)
+```
+
+---
+
+## 🧱 Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| **Frontend** | React 18, TypeScript, Vite |
+| **UI Framework** | Radix UI, Tailwind CSS |
+| **Backend** | FastAPI, Python |
+| **Vector Search** | FAISS |
+| **AI/LLM** | LLaMA3 (via Ollama) |
+| **Database** | Firebase Real-time Database |
+| **CLI** | Python (PyPI package) |
+
+---
+
+## 📂 Project Structure
+
+```
+OS3/
+├── backend/                 # Python FastAPI backend
+│   ├── api/               # API endpoints
+│   ├── services/          # RAG pipeline, Ollama client
+│   ├── data/              # Vulnerability database
+│   └── requirements.txt   # Python dependencies
+├── os3-cli/               # CLI tool for PyPI
+├── src/                   # React frontend
+│   ├── pages/            # Dashboard pages
+│   ├── components/       # Reusable UI components
+│   └── services/         # API integration
+├── public/               # Static assets
+└── package.json          # Frontend dependencies
+```
+
+---
+
+## 🧑‍💻 Getting Started
+
+### Prerequisites
+
+- **Python 3.9+**
+- **Node.js 18+**
+- **Ollama** (for AI chatbot)
+- **Firebase account** (for real-time backend)
+
+### Installation
+
+#### 1. Clone the Repository
+
+```bash
+git clone https://github.com/KR0079384/OS3.git
+cd OS3
+```
+
+#### 2. Backend Setup
+
+```bash
+cd backend
+
+# Create virtual environment
+python -m venv venv
+
+# Activate virtual environment
+# On Windows:
+venv\Scripts\activate
+# On macOS/Linux:
+source venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+```
+
+#### 3. Frontend Setup
+
+```bash
+cd ..
+
+# Install frontend dependencies
+npm install
+```
+
+#### 4. Start Ollama (for AI Assistant)
+
+```bash
+# Install Ollama from https://ollama.ai
+# Pull LLaMA3 model
+ollama pull llama3:8b
+```
+
+### Running the Application
+
+#### Start Backend Server
+
+```bash
+cd backend
+venv\Scripts\activate  # Windows
+# source venv/bin/activate  # macOS/Linux
+
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
+```
+
+#### Start Frontend Development Server
+
+```bash
+# In a new terminal
+cd OS3
+npm run dev
+```
+
+The application will be available at:
+- **Frontend**: http://localhost:5173
+- **Backend API**: http://localhost:8000
+- **API Documentation**: http://localhost:8000/docs
+
+---
+
+## 🌐 CLI Usage
+
+Install the CLI tool globally:
+
+```bash
+pip install os3-security
+```
+
+Scan packages:
+
+```bash
+os3 scan express
+os3 scan react
+os3 scan lodash
+```
+
+---
+
+## 🤝 Contributions
+
+Contributions are welcome!
+Feel free to open issues or submit PRs for:
+
+- New vulnerability detection features
+- UI/UX improvements
+- Additional language support
+- Performance optimizations
+
+---
+
+## 📜 License
+
+**MIT License**
+
+Free to use, modify, and distribute.
+
+---
+
+## Author
+
+**Mohamed Rafeeq Khan A**
+
+- Portfolio: [https://portfolio-2027-five.vercel.app](https://portfolio-2027-five.vercel.app)
+- GitHub: [https://github.com/Mohamedrxf](https://github.com/Mohamedrxf)
 
 
