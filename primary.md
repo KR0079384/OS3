@@ -39,6 +39,7 @@ OS3/
 
 | Area | Purpose | Start Here |
 |---|---|---|
+| `.github/` | GitHub workflows and repository configuration | [`.github/wiki.md`](.github/.github.md) |
 | `backend/` | FastAPI backend service, RAG engine, OSV integration, and security scoring | [`backend/wiki.md`](backend/backend.md) |
 | `os3-cli/` | Standalone Python CLI package published on PyPI as `os3-security` | [`os3-cli/wiki.md`](os3-cli/os3-cli.md) |
 | `public/` | Static branding assets, icons, and web server robots text | [`public/wiki.md`](public/public.md) |
