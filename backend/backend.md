@@ -10,7 +10,6 @@ dependency analysis, vulnerability intelligence, security scoring, and AI/RAG op
 | `main.py` | FastAPI application entry point, CORS middleware, and route registration. |
 | `requirements.txt` | Python dependency declarations for the FastAPI backend and RAG engine. |
 | `score_cli.py` | CLI test script for executing security scoring logic on package names. |
-| `serviceAccountKey.json` | Firebase Admin SDK credentials for backend authentication services. |
 | `attack_path_test.py` | Test script verifying attack path detection logic on dependency graphs. |
 | `test_attack_detector.py` | Test runner script for the attack path detection service. |
 | `test_dependencies.py` | Unit test verifying npm package dependency resolution. |
