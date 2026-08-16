@@ -15,4 +15,4 @@ external OSV/npm API integration clients, and the RAG vector search pipeline.
 | `ollama_client.py`        | Client interface for sending prompts and receiving streaming tokens from local Ollama LLM.                  |
 | `osv_service.py`          | Queries Google's OSV database (`api.osv.dev`) for package vulnerability records and severity metrics.       |
 | `rag_pipeline.py`         | Embeds security documents with `SentenceTransformer` and retrieves top-$k$ context matches via FAISS index. |
-| `example.py`              | Example of a dummy service file used to test the navigation workflow.                                       |
+|  |

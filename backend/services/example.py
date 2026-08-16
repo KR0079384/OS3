@@ -1,1 +1,0 @@
-print("This is a dummy example file used to test the navigation workflow")
