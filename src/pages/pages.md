@@ -10,6 +10,7 @@ This directory contains the main page views and route components of the OS3 web 
 | `Compare.tsx` | Side-by-side package comparison page comparing security scores, metrics, and risks across dependencies. |
 | `Dashboard.tsx` | Main security overview page displaying security score, risk distributions, and metric cards. |
 | `DependencyGraph.tsx` | Interactive ReactFlow graph page visualizing package dependency trees and attack paths. |
+| `Desktop.tsx` | Local workspace security command center displaying risk assessment, policy gates, CVE findings, and SBOM inventory. |
 | `Explore.tsx` | Package search and registry explorer page for discovering open-source packages. |
 | `Intelligence.tsx` | Supply chain security threat intelligence dashboard showcasing global vulnerability trends. |
 | `Landing.tsx` | Marketing landing page featuring hero banner, problem statement, features, and CLI installation CTA. |

@@ -40,6 +40,7 @@ OS3/
 | Area | Purpose | Start Here |
 |---|---|---|
 | `backend/` | FastAPI backend service, RAG engine, OSV integration, and security scoring | [`backend/wiki.md`](backend/backend.md) |
+| `docs/` | Architectural blueprints, system specs, and Obsidian documentation | [`docs/wiki.md`](docs/docs.md) |
 | `os3-cli/` | Standalone Python CLI package published on PyPI as `os3-security` | [`os3-cli/wiki.md`](os3-cli/os3-cli.md) |
 | `public/` | Static branding assets, icons, and web server robots text | [`public/wiki.md`](public/public.md) |
 | `scripts/` | Maintenance, wiki validation, and repository helper scripts | [`scripts/wiki.md`](scripts/scripts.md) |
