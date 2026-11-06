@@ -11,6 +11,7 @@ external OSV/npm API integration clients, and the RAG vector search pipeline.
 | `dependency_analyzer.py`  | Recursively resolves npm package dependencies into a structured dependency tree.                            |
 | `dependency_graph.py`     | Helper functions for constructing graph representation of package dependencies.                             |
 | `dependency_service.py`   | Service wrapper interface for fetching package dependencies.                                                |
+| `example.py`              | Dummy example file used to test repository navigation workflow validation.                                  |
 | `npm_service.py`          | Fetches package manifest JSON and direct dependencies from `registry.npmjs.org`.                            |
 | `ollama_client.py`        | Client interface for sending prompts and receiving streaming tokens from local Ollama LLM.                  |
 | `osv_service.py`          | Queries Google's OSV database (`api.osv.dev`) for package vulnerability records and severity metrics.       |
