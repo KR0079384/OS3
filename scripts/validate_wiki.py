@@ -29,13 +29,15 @@ IGNORED_DIRS = {
     "os3_security.egg-info",
     ".pytest_cache",
     ".idea",
-    ".vscode"
+    ".vscode",
+    ".github"
 }
 
 # Specific files ignored from mandatory wiki listings if desired
 IGNORED_FILES = {
     ".DS_Store",
-    "thumbs.db"
+    "thumbs.db",
+    "serviceAccountKey.json"
 }
 
 def get_root_dir():

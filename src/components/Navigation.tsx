@@ -4,6 +4,7 @@ import { Shield } from "lucide-react";
 
 const navItems = [
   { path: "/", label: "Home" },
+  { path: "/desktop", label: "Desktop" },
   { path: "/scan", label: "Scan" },
   { path: "/dashboard", label: "Dashboard" },
   { path: "/graph", label: "Dependency Graph" },

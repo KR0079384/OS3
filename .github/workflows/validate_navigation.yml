@@ -1,15 +1,14 @@
 name: Validate Navigation Metadata
 
 on:
-  push:
-    branches: [main, master]
   pull_request:
-    branches: [main, master]
+    branches: [main]
 
 jobs:
   validate-navigation:
     name: Validate Navigation System
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -19,5 +18,5 @@ jobs:
         with:
           python-version: "3.x"
 
-      - name: Run Navigation Validator
+      - name: Validate Navigation System
         run: python scripts/validate_wiki.py

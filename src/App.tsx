@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { Navigation } from "@/components/Navigation";
 import Landing from "./pages/Landing";
+import Desktop from "./pages/Desktop";
 import Scan from "./pages/Scan";
 import Dashboard from "./pages/Dashboard";
 import DependencyGraph from "./pages/DependencyGraph";
@@ -22,6 +23,7 @@ const AnimatedRoutes = () => {
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
         <Route path="/" element={<Landing />} />
+        <Route path="/desktop" element={<Desktop />} />
         <Route path="/scan" element={<Scan />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/graph" element={<DependencyGraph />} />
