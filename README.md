@@ -69,6 +69,10 @@ OS³ provides a **web-based interface** for interactive security analysis.
   - Suggests safer alternatives
   - Explains vulnerabilities in simple terms
 
+- **📚 CLI Command Reference**
+  - Offline-style documentation for every `os3` terminal command
+  - Synopsis, arguments, options, examples, and sample output in one page
+
 ---
 
 ## 🐍 CLI Tool (PyPI)

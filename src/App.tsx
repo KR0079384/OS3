@@ -13,6 +13,7 @@ import DependencyGraph from "./pages/DependencyGraph";
 import Vulnerabilities from "./pages/Vulnerabilities";
 import AICopilot from "./pages/AICopilot";
 import Recommendations from "./pages/Recommendations";
+import CLIReference from "./pages/CLIReference";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const AnimatedRoutes = () => {
         <Route path="/vulnerabilities" element={<Vulnerabilities />} />
         <Route path="/copilot" element={<AICopilot />} />
         <Route path="/recommendations" element={<Recommendations />} />
+        <Route path="/cli-reference" element={<CLIReference />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </AnimatePresence>

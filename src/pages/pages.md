@@ -7,6 +7,7 @@ This directory contains the main page views and route components of the OS3 web 
 | File | Description |
 |---|---|
 | `AICopilot.tsx` | AI Security Copilot interactive page supporting live security QA and streaming CVE answers. |
+| `CLIReference.tsx` | Man-style CLI command reference page documenting every `os3` terminal command with synopsis, arguments, options, examples, and sample output. |
 | `Compare.tsx` | Side-by-side package comparison page comparing security scores, metrics, and risks across dependencies. |
 | `Dashboard.tsx` | Main security overview page displaying security score, risk distributions, and metric cards. |
 | `DependencyGraph.tsx` | Interactive ReactFlow graph page visualizing package dependency trees and attack paths. |
