@@ -37,6 +37,11 @@ interface CommandDoc {
   notes?: string[];
 }
 
+/* ------------------------------------------------------------------
+   Command documentation derived from os3-cli/os3/cli.py (Typer app).
+   Only behavior actually implemented by the CLI is documented here.
+------------------------------------------------------------------ */
+
 const commandDocs: CommandDoc[] = [
   {
     id: "scan",
@@ -483,3 +488,4 @@ const CLIReference = () => {
 };
 
 export default CLIReference;
+
