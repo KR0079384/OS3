@@ -11,6 +11,7 @@ const navItems = [
   { path: "/vulnerabilities", label: "Vulnerabilities" },
   { path: "/copilot", label: "AI Copilot" },
   { path: "/recommendations", label: "Recommendations" },
+  { path: "/cli-reference", label: "CLI Reference" },
 ];
 
 export const Navigation = () => {
